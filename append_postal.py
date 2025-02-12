@@ -106,7 +106,7 @@ if __name__ == '__main__':
                 'ResaleFlatPrices/Resale-flat-prices-Jan-2017.csv',
                 'ResaleFlatPrices/Resale-Flat-Prices-Jan2015toDec2016.csv',
                 'ResaleFlatPrices/Resale-Flat-Prices-Mar_2012_Dec2014.csv']
-    for i in range(1, 2):
+    for i in range(2, 4):
         csv_path = csv_paths[i]
         df = pd.read_csv(csv_path)
         # df["postal_code"], df["latitude"], df["longitude"] = df.apply(get_postal_code, axis=1)

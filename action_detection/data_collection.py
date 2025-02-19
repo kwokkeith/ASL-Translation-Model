@@ -5,9 +5,47 @@ import mediapipe as mp
 import argparse
 from utils import draw_styled_landmarks, extract_keypoints, \
     mediapipe_detection, find_first_available_camera
+import shutil
 
 mp_holistic = mp.solutions.holistic  # Holistic model
 mp_drawing = mp.solutions.drawing_utils  # Drawing Utilities
+
+
+def cleanup_empty_folders(base_path):
+    """Removes empty folders inside the given base path."""
+    # Reverse order search for any empty folders
+    for root, dirs, _ in os.walk(base_path, topdown=False):
+        for folder in dirs:
+            folder_path = os.path.join(root, folder)
+            # Empty Folders
+            if os.path.isdir(folder_path) and not os.listdir(folder_path):
+                os.rmdir(folder_path)
+                print(f"Removed empty folder: {folder_path}")
+
+
+def remove_last_saved_sequence(data_path, actions):
+    """Removes the first non-empty sequence when interrupted, \
+    searching in reverse order."""
+    for action in actions:
+        action_path = os.path.join(data_path, action)
+
+        # Get all sequence folders (sorted in reverse order)
+        sequence_folders = sorted([
+            int(folder) for folder in os.listdir(action_path)
+            if folder.isdigit()
+        ], reverse=True)  # Reverse sorting for backward search
+
+        for last_sequence in sequence_folders:
+            last_sequence_path = os.path.join(action_path, str(last_sequence))
+
+            # Check if the folder contains data (not empty)
+            if len(os.listdir(last_sequence_path)) > 0:
+                print("Removing first non-empty sequence " +
+                      "(backward search): " +
+                      f"{last_sequence_path}")
+                # Remove the first found non-empty sequence
+                shutil.rmtree(last_sequence_path)
+                return  # Exit after deleting the first non-empty sequence
 
 
 def setup_folders(data_path, actions, no_sequences):
@@ -18,26 +56,25 @@ def setup_folders(data_path, actions, no_sequences):
         action_path = os.path.join(data_path, action)
         os.makedirs(action_path, exist_ok=True)
 
-        # Remove empty sequence folders
-        existing_sequences = []
-        for folder in os.listdir(action_path):
-            folder_path = os.path.join(action_path, folder)
-            if os.path.isdir(folder_path):
-                if not os.listdir(folder_path):  # Folder is empty, remove it
-                    os.rmdir(folder_path)
-                else:
-                    try:
-                        existing_sequences.append(int(folder))
-                    except ValueError:
-                        pass  # Ignore non-numeric folder names
+        # Cleanup empty sequence folders before continuing
+        cleanup_empty_folders(action_path)
+
+        # Get the highest sequence number
+        existing_sequences = [
+            int(folder) for folder in os.listdir(action_path)
+            if folder.isdigit()
+        ]
 
         # Start numbering from the next available sequence number
         start_sequence = max(existing_sequences, default=-1) + 1
+        print(f"Using start sequence: {start_sequence}")
 
         # Create new sequence folders
         for sequence in range(start_sequence, start_sequence + no_sequences):
             sequence_path = os.path.join(action_path, str(sequence))
             os.makedirs(sequence_path, exist_ok=True)
+
+    return start_sequence
 
 
 def main():
@@ -84,61 +121,89 @@ def main():
 
     # Only setup collection folder if we can open the videocapture
     # Setup collection folders
-    setup_folders(data_path, actions, no_sequences)
+    start_sequence = setup_folders(data_path, actions, no_sequences)
 
-    # Set mediapipe model
-    with mp_holistic.Holistic(min_detection_confidence=args.mpdc,
-                              min_tracking_confidence=args.mptc) as holistic:
-        # Loop through actions
-        for action in actions:
-            # Loop through sequences aka videos
-            for sequence in range(no_sequences):
-                # Loop through video length aka sequence length
-                for frame_num in range(sequence_length):
+    try:
+        # Set mediapipe model
+        with mp_holistic.Holistic(min_detection_confidence=args.mpdc,
+                                  min_tracking_confidence=args.mptc) \
+                as holistic:
+            # Loop through actions
+            for action in actions:
+                # Loop through sequences aka videos
+                for sequence in range(no_sequences):
+                    # Loop through video length aka sequence length
+                    actual_sequence = start_sequence + sequence
+                    for frame_num in range(sequence_length):
 
-                    # Read feed
-                    ret, frame = cap.read()
+                        # Read feed
+                        ret, frame = cap.read()
 
-                    # Make detections to get landmarks face, shoulder and hands
-                    image, results = mediapipe_detection(frame, holistic)
+                        # Detections to get landmarks face, shoulder and hands
+                        image, results = mediapipe_detection(frame, holistic)
 
-                    # Draw landmarks
-                    draw_styled_landmarks(image, results)
+                        # Draw landmarks
+                        draw_styled_landmarks(image, results)
 
-                    # Apply wait logic
-                    # (so that we can take a break before recollecting data)
-                    # Display text to give instructions and state
-                    if frame_num == 0:
-                        cv2.putText(image, f"Collecting {action}...",
-                                    (120, 200), cv2.FONT_HERSHEY_SIMPLEX,
-                                    1, (0, 255, 0), 4, cv2.LINE_AA)
-                        cv2.putText(image,
-                                    f"Collecting frames for {action}" +
-                                    f"Video Number {sequence}",
-                                    (15, 12), cv2.FONT_HERSHEY_SIMPLEX,
-                                    0.5, (0, 0, 255), 1, cv2.LINE_AA)
-                        # Show to screen
-                        cv2.imshow('OpenCV Feed', image)
-                        cv2.waitKey(args.wait)
-                    else:
-                        cv2.putText(image,
-                                    f"Collecting frames for {action}" +
-                                    f"Video Number {sequence}",
-                                    (15, 12), cv2.FONT_HERSHEY_SIMPLEX,
-                                    0.5, (0, 0, 255), 1, cv2.LINE_AA)
-                        # Show to screen
-                        cv2.imshow('OpenCV Feed', image)
+                        # Apply wait logic
+                        # so that we can take a break before recollecting data
+                        # Display text to give instructions and state
+                        if frame_num == 0:
+                            cv2.putText(image, f"Collecting {action}...",
+                                        (120, 250), cv2.FONT_HERSHEY_SIMPLEX,
+                                        1, (0, 255, 0), 4, cv2.LINE_AA)
+                            cv2.putText(image,
+                                        f"Collecting frames for {action}",
+                                        (50, 100), cv2.FONT_HERSHEY_SIMPLEX,
+                                        1, (0, 0, 255), 3, cv2.LINE_AA)
+                            cv2.putText(image,
+                                        f"Video Number {sequence} of " +
+                                        f"{no_sequences}",
+                                        (50, 150), cv2.FONT_HERSHEY_SIMPLEX,
+                                        1, (0, 0, 255), 3, cv2.LINE_AA)
+                            cv2.putText(image,
+                                        "Actual Video Number: " +
+                                        f"{actual_sequence}",
+                                        (50, 200), cv2.FONT_HERSHEY_SIMPLEX,
+                                        1, (0, 0, 255), 3, cv2.LINE_AA)
+                            # Show to screen
+                            cv2.imshow('OpenCV Feed', image)
+                            cv2.waitKey(args.wait)
+                        else:
+                            cv2.putText(image,
+                                        f"Collecting frames for {action}",
+                                        (50, 100), cv2.FONT_HERSHEY_SIMPLEX,
+                                        1, (0, 0, 255), 3, cv2.LINE_AA)
+                            cv2.putText(image,
+                                        f"Video Number {sequence} of " +
+                                        f"{no_sequences}",
+                                        (50, 150), cv2.FONT_HERSHEY_SIMPLEX,
+                                        1, (0, 0, 255), 3, cv2.LINE_AA)
+                            cv2.putText(image,
+                                        "Actual Video Number: " +
+                                        f"{actual_sequence}",
+                                        (50, 200), cv2.FONT_HERSHEY_SIMPLEX,
+                                        1, (0, 0, 255), 3, cv2.LINE_AA)
+                            # Show to screen
+                            cv2.imshow('OpenCV Feed', image)
 
-                    # Export keypoints
-                    keypoints = extract_keypoints(results)
-                    npy_path = os.path.join(
-                        data_path, action, str(sequence), str(frame_num))
-                    np.save(npy_path, keypoints)
+                        # Export keypoints
+                        keypoints = extract_keypoints(results)
+                        npy_path = os.path.join(
+                            data_path, action,
+                            str(actual_sequence),
+                            str(frame_num))
+                        np.save(npy_path, keypoints)
 
-                    # Break gracefully
-                    if cv2.waitKey(10) & 0xFF == ord('q'):
-                        break
+                        # Break gracefully
+                        if cv2.waitKey(10) & 0xFF == ord('q'):
+                            raise KeyboardInterrupt
+    except KeyboardInterrupt:
+        print("\n Data collection interrupted. Saving collected data...")
+        remove_last_saved_sequence(data_path, actions)
+        cleanup_empty_folders(data_path)
 
+    finally:
         # Release captures
         cap.release()
         cv2.destroyAllWindows()

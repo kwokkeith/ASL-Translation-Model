@@ -11,34 +11,33 @@ mp_drawing = mp.solutions.drawing_utils  # Drawing Utilities
 
 
 def setup_folders(data_path, actions, no_sequences):
-    """Setup folders for collection of frames"""
-    # Ensure the base directory exist first
-    os.makedirs(data_path, exist_ok=True)
+    """Cleans up empty folders and sets up directories for data collection."""
+    os.makedirs(data_path, exist_ok=True)  # Ensure base directory exists
 
-    # create folders to store the data for each action sequence
-    # each folder will have args.sl number of frames of data
-    # Create folders to store the data for each action sequence
     for action in actions:
         action_path = os.path.join(data_path, action)
         os.makedirs(action_path, exist_ok=True)
 
-        # Get the highest sequence number that exists for this action
-        existing_sequences = [
-            int(folder) for folder in os.listdir(action_path)
-            if folder.isdigit()
-        ]
+        # Remove empty sequence folders
+        existing_sequences = []
+        for folder in os.listdir(action_path):
+            folder_path = os.path.join(action_path, folder)
+            if os.path.isdir(folder_path):
+                if not os.listdir(folder_path):  # Folder is empty, remove it
+                    os.rmdir(folder_path)
+                else:
+                    try:
+                        existing_sequences.append(int(folder))
+                    except ValueError:
+                        pass  # Ignore non-numeric folder names
 
-        # Start from the next available sequence number
+        # Start numbering from the next available sequence number
         start_sequence = max(existing_sequences, default=-1) + 1
 
+        # Create new sequence folders
         for sequence in range(start_sequence, start_sequence + no_sequences):
-            try:
-                os.makedirs(os.path.join(
-                    action_path, str(sequence)), exist_ok=True)
-            except Exception as e:
-                print(
-                    "Error creating directory " +
-                    f"{os.path.join(action_path, str(sequence))}: {e}")
+            sequence_path = os.path.join(action_path, str(sequence))
+            os.makedirs(sequence_path, exist_ok=True)
 
 
 def main():

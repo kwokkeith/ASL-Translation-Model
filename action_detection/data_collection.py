@@ -23,7 +23,7 @@ def cleanup_empty_folders(base_path):
                 print(f"Removed empty folder: {folder_path}")
 
 
-def remove_last_saved_sequence(data_path, actions):
+def remove_last_saved_sequence(data_path, actions, start_sequence):
     """Removes the first non-empty sequence when interrupted, \
     searching in reverse order."""
     for action in actions:
@@ -40,9 +40,12 @@ def remove_last_saved_sequence(data_path, actions):
 
             # Check if the folder contains data (not empty)
             if len(os.listdir(last_sequence_path)) > 0:
-                print("Removing first non-empty sequence " +
-                      "(backward search): " +
-                      f"{last_sequence_path}")
+                if last_sequence < start_sequence:
+                    return
+                else:
+                    print("Removing first non-empty sequence " +
+                          "(backward search): " +
+                          f"{last_sequence_path}")
                 # Remove the first found non-empty sequence
                 shutil.rmtree(last_sequence_path)
                 return  # Exit after deleting the first non-empty sequence
@@ -200,7 +203,7 @@ def main():
                             raise KeyboardInterrupt
     except KeyboardInterrupt:
         print("\n Data collection interrupted. Saving collected data...")
-        remove_last_saved_sequence(data_path, actions)
+        remove_last_saved_sequence(data_path, actions, start_sequence)
         cleanup_empty_folders(data_path)
 
     finally:

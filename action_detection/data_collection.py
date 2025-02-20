@@ -160,7 +160,7 @@ def main():
                                         (50, 100), cv2.FONT_HERSHEY_SIMPLEX,
                                         1, (0, 0, 255), 3, cv2.LINE_AA)
                             cv2.putText(image,
-                                        f"Video Number {sequence} of " +
+                                        f"Video Number {sequence+1} of " +
                                         f"{no_sequences}",
                                         (50, 150), cv2.FONT_HERSHEY_SIMPLEX,
                                         1, (0, 0, 255), 3, cv2.LINE_AA)
@@ -178,7 +178,7 @@ def main():
                                         (50, 100), cv2.FONT_HERSHEY_SIMPLEX,
                                         1, (0, 0, 255), 3, cv2.LINE_AA)
                             cv2.putText(image,
-                                        f"Video Number {sequence} of " +
+                                        f"Video Number {sequence+1} of " +
                                         f"{no_sequences}",
                                         (50, 150), cv2.FONT_HERSHEY_SIMPLEX,
                                         1, (0, 0, 255), 3, cv2.LINE_AA)

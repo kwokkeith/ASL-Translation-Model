@@ -46,7 +46,7 @@ def get_model_save_path(base_dir, dataset_name, optimizer, epochs):
 
     # Create directory if not exists
     os.makedirs(save_path, exist_ok=True)
-    return
+    return save_path
 
 
 def main():
@@ -57,11 +57,11 @@ def main():
                         "(e.g., mp_data_processed/skip_2_testsize_10_0)")
     parser.add_argument("--epochs", type=int, default=500,
                         help="Number of epochs for training")
-    parser.add_argument("--optimizer", type=str, required=True,
+    parser.add_argument("--optimizer", type=str,
                         default="Adam",
                         choices=["Adam", "SGD", "AdamW"],
                         help="Optimizer to use for the model")
-    parser.add_argument("--rate", type=float, required=True,
+    parser.add_argument("--rate", type=float,
                         default=0.001,
                         help="Learning rate for the model")
 
@@ -110,23 +110,31 @@ def main():
     else:
         print("Failed model compilation, model not compatible")
 
+    print("Training model...")
+    print("Use tensorboard --logdir=/Logs/train to access tensorboard gui")
+
     # Train Model
-    model.fit(X_train, Y_train, epochs=args.epochs, callbacks=[tb_callback])
+    try:
+        model.fit(X_train, Y_train, epochs=args.epochs,
+                  callbacks=[tb_callback])
+    except KeyboardInterrupt:
+        pass
+    finally:
+        # Print Model Summary
+        print(model.summary())
 
-    # Print Model Summary
-    print(model.summary())
+        # Get save path for model weights
+        os.makedirs("Saved_Models", exist_ok=True)
+        model_save_path = get_model_save_path(
+            "Saved_Models", dataset_name, args.optimizer, args.epochs)
 
-    # Get save path for model weights
-    model_save_path = get_model_save_path(
-        "Saved_Models", dataset_name, args.optimizer, args.epochs)
+        # Save Model Weights
+        weights_file = os.path.join(model_save_path, "model_weights.h5")
+        model.save_weights(weights_file)
 
-    # Save Model Weights
-    weights_file = os.path.join(model_save_path, "model_weights.h5")
-    model.save_weights(weights_file)
+        print(f"Model weights saved at: {weights_file}")
 
-    print(f"Model weights saved at: {weights_file}")
-
-    evaluate_model(model, X_test, Y_test)
+        evaluate_model(model, X_test, Y_test)
 
 
 if __name__ == "__main__":

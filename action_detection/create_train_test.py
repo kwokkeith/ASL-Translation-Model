@@ -69,7 +69,7 @@ def main():
     parser.add_argument("--sl", type=int, default="60",
                         help="Number of frames in sequence data collected.")
     parser.add_argument("--testsize", type=int, default="5",
-                        help="The test size (%) to split the data")
+                        help="The test size percentage to split the data")
     args = parser.parse_args()
 
     # path for exported data, numpy arrays

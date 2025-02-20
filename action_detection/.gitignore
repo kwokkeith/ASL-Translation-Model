@@ -1,3 +1,6 @@
 /venv/
 /MP_Data/
 /mp_data/
+/mp_data_processed/
+/Logs/
+/Saved_Models/

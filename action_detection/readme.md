@@ -4,7 +4,7 @@ This repository contains Python scripts for training, evaluating, and running an
 
 ## 📂 Project Files
 
-### **1️⃣ create\_train\_test.py**
+### **create\_train\_test.py**
 
 📌 **Purpose:** This script processes collected action data and splits it into **training** and **testing** datasets.
 
@@ -16,7 +16,7 @@ This repository contains Python scripts for training, evaluating, and running an
 
 ---
 
-### **2️⃣ data\_collection.py**
+### **data\_collection.py**
 
 📌 **Purpose:** Collects action sequences using **Mediapipe** for training an action recognition model.
 
@@ -31,7 +31,18 @@ This repository contains Python scripts for training, evaluating, and running an
 
 ---
 
-### **3️⃣ evaluate\_model.py**
+### **merge_datasets.py**
+
+📌 **Purpose:** Merges multiple `mp_data` folders, ensuring unique sequence numbering, merging similar actions, and preventing circular merging issues.
+
+🔹 **Arguments:**
+
+- `--i` (str, required, nargs='+'): List of input datasets (e.g., `mp_data1/`, `mp_data2/`).
+- `--o` (str, required): Output path to the resultant dataset.
+
+---
+
+### **evaluate\_model.py**
 
 📌 **Purpose:** Loads a trained model, evaluates it on a test dataset, and reports accuracy and confusion matrices.
 
@@ -43,7 +54,7 @@ This repository contains Python scripts for training, evaluating, and running an
 
 ---
 
-### **4️⃣ train\_model.py**
+### **train\_model.py**
 
 📌 **Purpose:** Trains the LSTM model on a dataset and saves model weights.
 
@@ -56,7 +67,7 @@ This repository contains Python scripts for training, evaluating, and running an
 
 ---
 
-### **5️⃣ run\_live.py**
+### **run\_live.py**
 
 📌 **Purpose:** Runs real-time action recognition on a **live webcam feed** using a trained model.
 
@@ -73,7 +84,7 @@ This repository contains Python scripts for training, evaluating, and running an
 
 ---
 
-### **6️⃣ utils.py**
+### **utils.py**
 
 📌 **Purpose:** Utility functions for **Mediapipe processing, model building, and optimizer extraction**. Used in multiple scripts to reduce redundancy.
 

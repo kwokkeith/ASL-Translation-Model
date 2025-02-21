@@ -70,11 +70,14 @@ def main():
                         help="Number of frames in sequence data collected.")
     parser.add_argument("--testsize", type=int, default="5",
                         help="The test size percentage to split the data")
+    parser.add_argument("--i", type=str, default="mp_data",
+                        help="Test dataset (i.e. mp_data) \
+                        to use for splitting")
     args = parser.parse_args()
 
     # path for exported data, numpy arrays
-    data_path = os.path.join('mp_data')
-    processed_data_path = os.path.join('mp_data_processed')
+    data_path = os.path.join(args.i)
+    processed_data_path = os.path.join(args.i + '_processed')
 
     # Ensure processed data path exist
     os.makedirs(processed_data_path, exist_ok=True)

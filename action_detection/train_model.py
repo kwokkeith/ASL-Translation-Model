@@ -83,10 +83,10 @@ def main():
 
     # Build the LSTM Model
     model = Sequential()
-    model.add(LSTM(64, return_sequences=True, activation='relu',
+    model.add(LSTM(64, return_sequences=True, dropout=0.5, activation='relu',
               input_shape=(X_train.shape[1], X_train.shape[2])))
-    model.add(LSTM(128, return_sequences=True, activation='relu'))
-    model.add(LSTM(64, return_sequences=False, activation='relu'))
+    model.add(LSTM(128, return_sequences=True, dropout=0.5, activation='relu'))
+    model.add(LSTM(64, return_sequences=False, dropout=0.5, activation='relu'))
     model.add(Dense(64, activation='relu'))
     model.add(Dense(32, activation='relu'))
     # Output layer with softmax activation

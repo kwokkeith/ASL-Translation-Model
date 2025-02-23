@@ -1,11 +1,13 @@
+import utils
+from evaluate_model import evaluate_model
+from tensorflow.keras.optimizers import AdamW, SGD, Adam
+from tensorflow.keras.callbacks import TensorBoard, EarlyStopping
 import os
 import argparse
 import numpy as np
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
-from tensorflow.keras.callbacks import TensorBoard
-from tensorflow.keras.optimizers import AdamW, SGD, Adam
-from evaluate_model import evaluate_model
+from tensorflow.keras.layers import LSTM, Dense, ConvLSTM2D, \
+    MaxPooling3D, TimeDistributed, Dropout, Flatten
 
 
 def load_dataset(dataset_dir):
@@ -64,6 +66,9 @@ def main():
     parser.add_argument("--rate", type=float,
                         default=0.001,
                         help="Learning rate for the model")
+    parser.add_argument('--early', default=False,
+                        action=argparse.BooleanOptionalAction,
+                        help="Whether to use early stop heuristic")
 
     args = parser.parse_args()
 
@@ -81,8 +86,18 @@ def main():
     log_dir = os.path.join("Logs")
     tb_callback = TensorBoard(log_dir=log_dir)
 
+    # Setup early stopping callbacks
+    early_stopping_callback = EarlyStopping(monitor='val_loss',
+                                            patience=25,
+                                            mode='min',
+                                            restore_best_weights=True)
+
     # Build the LSTM Model
     model = Sequential()
+
+    # Define model architecture
+    ###################################################################
+    # LSTM only
     model.add(LSTM(64, return_sequences=True, dropout=0.5, activation='relu',
               input_shape=(X_train.shape[1], X_train.shape[2])))
     model.add(LSTM(128, return_sequences=True, dropout=0.5, activation='relu'))
@@ -91,6 +106,66 @@ def main():
     model.add(Dense(32, activation='relu'))
     # Output layer with softmax activation
     model.add(Dense(actions_count, activation='softmax'))
+    ###################################################################
+
+    """
+    ###################################################################
+    # ConvLSTM
+    SEQUENCE_LENGTH = 30
+    IMAGE_HEIGHT = 30
+    IMAGE_WIDTH = 30
+    model.add(ConvLSTM2D(filters=4, kernel_size=(3, 3), activation='tanh',
+                         data_format="channels_last",
+                         recurrent_dropout=0.2,
+                         return_sequences=True,
+                         input_shape=(SEQUENCE_LENGTH,
+                                      IMAGE_HEIGHT,
+                                      IMAGE_WIDTH,
+                                      3)))
+    model.add(MaxPooling3D(pool_size=(1, 2, 2),
+                           padding='same',
+                           data_format='channels_last'))
+    model.add(TimeDistributed(Dropout(0.2)))
+
+    model.add(ConvLSTM2D(filters=8,
+                         kernel_size=(3, 3),
+                         activation='tanh',
+                         data_format="channels_last",
+                         recurrent_dropout=0.2,
+                         return_sequences=True))
+
+    model.add(MaxPooling3D(pool_size=(1, 2, 2),
+                           padding='same',
+                           data_format="channels_last"))
+    model.add(TimeDistributed(Dropout(0.2)))
+
+    model.add(ConvLSTM2D(filters=14,
+                         kernel_size=(3, 3),
+                         activation='tanh',
+                         data_format='channels_last',
+                         recurrent_dropout=0.2,
+                         return_sequences=True))
+
+    model.add(MaxPooling3D(pool_size=(1, 2, 2),
+                           padding='same',
+                           data_format='channels_last'))
+    model.add(TimeDistributed(Dropout(0.2)))
+
+    model.add(ConvLSTM2D(filters=16,
+                         kernel_size=(2, 2),
+                         activation='tanh',
+                         data_format='channels_last',
+                         recurrent_dropout=0.2,
+                         return_sequences=True))
+
+    model.add(MaxPooling3D(pool_size=(1, 2, 2),
+                           padding='same',
+                           data_format='channels_last'))
+
+    model.add(Flatten())
+    model.add(Dense(actions_count, activation='softmax'))
+    ###################################################################
+    """
 
     # Compile Model
     if args.optimizer == "Adam":  # For most cases
@@ -115,8 +190,19 @@ def main():
 
     # Train Model
     try:
-        model.fit(X_train, Y_train, epochs=args.epochs,
-                  callbacks=[tb_callback])
+        if args.early:
+            model_training_history = model.fit(X_train, Y_train,
+                                               epochs=args.epochs,
+                                               shuffle=True,
+                                               validation_split=0.2,
+                                               callbacks=[tb_callback,
+                                                          early_stopping_callback])
+        else:
+            model_training_history = model.fit(X_train, Y_train,
+                                               epochs=args.epochs,
+                                               shuffle=True,
+                                               validation_split=0.2,
+                                               callbacks=[tb_callback])
     except KeyboardInterrupt:
         pass
     finally:
@@ -127,6 +213,22 @@ def main():
         os.makedirs("Saved_Models", exist_ok=True)
         model_save_path = get_model_save_path(
             "Saved_Models", dataset_name, args.optimizer, args.epochs)
+
+        # Get plot of model_training_history
+        # Visualise training and validation loss metrics
+        plot_1 = utils.plot_metric(model_training_history,
+                                   'loss',
+                                   'val_loss',
+                                   'Total Loss vs Total validation Loss')
+        plot_1.savefig(os.path.join(model_save_path, "Loss"))
+        plot_1.close()
+        # visualise training and validation accuracy metrics
+        plot_2 = utils.plot_metric(model_training_history,
+                                   'categorical_accuracy',
+                                   'val_categorical_accuracy',
+                                   'Total Accuracy vs Total Validation Accuracy')
+        plot_2.savefig(os.path.join(model_save_path, "Accuracy"))
+        plot_2.close()
 
         # Save Model Weights
         weights_file = os.path.join(model_save_path, "model_weights.h5")

@@ -27,9 +27,14 @@ def build_model(input_shape, num_classes):
     """Creates the LSTM model architecture."""
     model = Sequential([
         LSTM(64, return_sequences=True,
+             dropout=0.5,
              activation='relu', input_shape=input_shape),
-        LSTM(128, return_sequences=True, activation='relu'),
-        LSTM(64, return_sequences=False, activation='relu'),
+        LSTM(128, return_sequences=True,
+             dropout=0.5,
+             activation='relu'),
+        LSTM(64, return_sequences=False,
+             dropout=0.5,
+             activation='relu'),
         Dense(64, activation='relu'),
         Dense(32, activation='relu'),
         Dense(num_classes, activation='softmax')  # Output layer

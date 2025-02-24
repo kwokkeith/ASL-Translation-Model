@@ -4,6 +4,8 @@ import mediapipe as mp
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.optimizers import Adam, AdamW, SGD
+import matplotlib.pyplot as plt
+
 
 # Initialize Mediapipe modules
 mp_holistic = mp.solutions.holistic
@@ -113,3 +115,39 @@ def extract_optimizer_from_path(model_path, learning_rate=0.001):
         return SGD(learning_rate=learning_rate, momentum=0.9)
     else:
         return Adam(learning_rate=learning_rate)  # Default to Adam
+
+
+def plot_metric(model_training_history,
+                metric_name_1,
+                metric_name_2,
+                plot_name):
+    """
+    This function plots the metrics passed to it in a graph.
+    Args:
+        model_training_history: A history object containing a record of
+        and validation loss values and metrics values at successive epochs.
+        metric_name_1: The name of the first metric that needs to be plotted
+        metric_name_2: The name of the second metric that needs to be plotted.
+        plot_name: The title of the graph
+
+    Returns:
+        plt: the matplotlib plot object.
+    """
+    # Get metric values using metric names as identifiers
+    metric_value_1 = model_training_history.history[metric_name_1]
+    metric_value_2 = model_training_history.history[metric_name_2]
+
+    # Construct range object used as x-axis of the graph
+    epochs = range(len(metric_value_1))
+
+    # plot the graph
+    plt.plot(epochs, metric_value_1, 'blue', label=metric_name_1)
+    plt.plot(epochs, metric_value_2, 'red', label=metric_name_2)
+
+    # Add title to plot
+    plt.title(str(plot_name))
+
+    # Add legends to plot
+    plt.legend()
+
+    return plt

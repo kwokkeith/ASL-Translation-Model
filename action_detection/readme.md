@@ -28,6 +28,7 @@ This repository contains Python scripts for training, evaluating, and running an
 - `--mpdc` (float, default=`0.5`): Minimum Mediapipe detection confidence.
 - `--mptc` (float, default=`0.5`): Minimum Mediapipe tracking confidence.
 - `--wait` (int, default=`2000`): Wait time (ms) between data collection frames.
+- --o (str, default=mp_data): Output folder for the data collection 
 
 ---
 

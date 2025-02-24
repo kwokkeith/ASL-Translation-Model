@@ -93,17 +93,20 @@ def main():
     feature, target = create_label_features(
         actions, args.sl, data_path, args.skip)
 
-    X_train, X_test, Y_train, Y_test = train_test_split(
-        feature, target, test_size=args.testsize/100.0)
-
     # Get a logical directory to save the dataset
     save_dir = get_storage_directory(
         processed_data_path, args.skip, args.testsize)
 
+    if args.testsize != 100.0:
+        X_train, X_test, Y_train, Y_test = train_test_split(
+            feature, target, test_size=args.testsize/100.0)
+        np.save(os.path.join(save_dir, "X_train.npy"), X_train)
+        np.save(os.path.join(save_dir, "Y_train.npy"), Y_train)
+    else:
+        X_test, Y_test = feature, target
+
     # Save datasets
-    np.save(os.path.join(save_dir, "X_train.npy"), X_train)
     np.save(os.path.join(save_dir, "X_test.npy"), X_test)
-    np.save(os.path.join(save_dir, "Y_train.npy"), Y_train)
     np.save(os.path.join(save_dir, "Y_test.npy"), Y_test)
 
     print(f"Data saved to {save_dir}")

@@ -95,11 +95,13 @@ def main():
                         help="Minimum tracking confidence mediapipe model")
     parser.add_argument("--wait", type=int, default=2000,
                         help="Wait time (ms) in between collection frames")
+    parser.add_argument("--o", type=str, default="mp_data",
+                        help="Output folder of the data")
     args = parser.parse_args()
     print(f"actions to record {args.actions}")
 
     # path for exported data, numpy arrays
-    data_path = os.path.join('mp_data')
+    data_path = os.path.join(args.o)
 
     # actions to detect
     actions = np.array(args.actions)

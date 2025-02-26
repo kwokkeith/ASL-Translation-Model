@@ -3,5 +3,9 @@
 /mp_data/
 /mp_data_1/
 /mp_data_processed/
+/mp_data_kz/
+/mp_data_kz_processed/
+/left_mp_data/
 /Logs/
 /Saved_Models/
+/Saved_Models_LSTM/

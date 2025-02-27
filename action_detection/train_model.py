@@ -7,7 +7,8 @@ import argparse
 import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, ConvLSTM2D, \
-    MaxPooling3D, TimeDistributed, Dropout, Flatten
+    MaxPooling3D, TimeDistributed, Dropout, Flatten, BatchNormalization, \
+    SpatialDropout1D
 
 
 def load_dataset(dataset_dir):
@@ -98,16 +99,61 @@ def main():
     # Define model architecture
     ###################################################################
     # LSTM only
-    model.add(LSTM(64, return_sequences=True, dropout=0.5, activation='relu',
-              input_shape=(X_train.shape[1], X_train.shape[2])))
-    model.add(LSTM(128, return_sequences=True, dropout=0.5, activation='relu'))
-    model.add(LSTM(64, return_sequences=False, dropout=0.5, activation='relu'))
+    """
+    model.add(LSTM(64,
+                   return_sequences=True,
+                   recurrent_dropout=0.25,
+                   dropout=0.3,
+                   activation='relu',
+                   input_shape=(X_train.shape[1], X_train.shape[2])))
+    model.add(LSTM(128,
+                   return_sequences=True,
+                   recurrent_dropout=0.25,
+                   dropout=0.3,
+                   activation='relu'))
+    model.add(LSTM(64,
+                   return_sequences=False,
+                   recurrent_dropout=0.25,
+                   dropout=0.3,
+                   activation='relu'))
     model.add(Dense(64, activation='relu'))
     model.add(Dense(32, activation='relu'))
     # Output layer with softmax activation
     model.add(Dense(actions_count, activation='softmax'))
     ###################################################################
+"""
+    ###################################################################
+    # LSTM only
 
+    model.add(SpatialDropout1D(0.3))
+
+    model.add(LSTM(64,
+                   return_sequences=True,
+                   recurrent_dropout=0.25,
+                   dropout=0.3,
+                   activation='relu',
+                   input_shape=(X_train.shape[1], X_train.shape[2])))
+    model.add(BatchNormalization())
+
+    model.add(LSTM(128,
+                   return_sequences=True,
+                   recurrent_dropout=0.25,
+                   dropout=0.3,
+                   activation='relu'))
+    model.add(BatchNormalization())
+
+    model.add(LSTM(64,
+                   return_sequences=False,
+                   recurrent_dropout=0.25,
+                   dropout=0.3,
+                   activation='relu'))
+    model.add(BatchNormalization())
+
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(32, activation='relu'))
+    # Output layer with softmax activation
+    model.add(Dense(actions_count, activation='softmax'))
+    ###################################################################
     """
     ###################################################################
     # ConvLSTM
@@ -231,8 +277,10 @@ def main():
         plot_2.close()
 
         # Save Model Weights
-        weights_file = os.path.join(model_save_path, "model_weights.h5")
+        weights_file = os.path.join(
+            model_save_path, "model_weights.weights.h5")
         model.save_weights(weights_file)
+        model.save(os.path.join(model_save_path, 'model.h5'))
 
         print(f"Model weights saved at: {weights_file}")
 

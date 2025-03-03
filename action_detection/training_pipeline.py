@@ -139,12 +139,12 @@ def save_results_to_csv(csv_path, epochs, acc, f1, loss, cat_acc, class_report, 
         "Categorical Accuracy": [cat_acc],
         "Precision": [class_report["weighted avg"]["precision"]],
         "Recall": [class_report["weighted avg"]["recall"]],
-        "Conf Matrix": [json.dumps(conf_matrix)],
-        "Classification Report": [json.dumps(class_report)],
+        "Conf Matrix": [conf_matrix)],
+        "Classification Report": [class_report],
         "Precision (OOD)": [ood_class_report["weighted avg"]["precision"]],
         "Recall (OOD)": [ood_class_report["weighted avg"]["recall"]],
-        "Conf Matrix (OOD)": [json.dumps(ood_conf_matrix)],
-        "Classification Report (OOD)": [json.dumps(ood_class_report)]
+        "Conf Matrix (OOD)": [ood_conf_matrix],
+        "Classification Report (OOD)": [ood_class_report]
     })
 
     if os.path.exists(csv_path):

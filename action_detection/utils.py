@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 import mediapipe as mp
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.layers import LSTM, Dense, Input, \
+    SpatialDropout1D, BatchNormalization
 from tensorflow.keras.optimizers import Adam, AdamW, SGD
 import matplotlib.pyplot as plt
 
@@ -95,15 +96,46 @@ def extract_keypoints(results):
 
 def build_model(input_shape, num_classes):
     """Creates the LSTM model architecture."""
-    model = Sequential([
-        LSTM(64, return_sequences=True,
-             activation='relu', input_shape=input_shape),
-        LSTM(128, return_sequences=True, activation='relu'),
-        LSTM(64, return_sequences=False, activation='relu'),
-        Dense(64, activation='relu'),
-        Dense(32, activation='relu'),
-        Dense(num_classes, activation='softmax')  # Output layer
-    ])
+    # model = Sequential([
+    #     LSTM(64, return_sequences=True,
+    #          activation='relu', input_shape=input_shape),
+    #     LSTM(128, return_sequences=True, activation='relu'),
+    #     LSTM(64, return_sequences=False, activation='relu'),
+    #     Dense(64, activation='relu'),
+    #     Dense(32, activation='relu'),
+    #     Dense(num_classes, activation='softmax')  # Output layer
+    # ])
+
+    model = Sequential()
+    model.add(SpatialDropout1D(0.3))
+
+    model.add(LSTM(64,
+                   return_sequences=True,
+                   recurrent_dropout=0.25,
+                   dropout=0.3,
+                   activation='relu',
+                   input_shape=input_shape))
+    model.add(BatchNormalization())
+
+    model.add(LSTM(128,
+                   return_sequences=True,
+                   recurrent_dropout=0.25,
+                   dropout=0.3,
+                   activation='relu'))
+    model.add(BatchNormalization())
+
+    model.add(LSTM(64,
+                   return_sequences=False,
+                   recurrent_dropout=0.25,
+                   dropout=0.3,
+                   activation='relu'))
+    model.add(BatchNormalization())
+
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(32, activation='relu'))
+    # Output layer with softmax activation
+    model.add(Dense(num_classes, activation='softmax'))
+    
     return model
 
 

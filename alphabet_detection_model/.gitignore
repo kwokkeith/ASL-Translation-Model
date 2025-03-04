@@ -1,6 +1,15 @@
 /venv/
 /MP_Data/
+/mp_data
 /mp_data_1/
 /mp_data_1_processed/
+/mp_data_2/
+/mp_data_2_processed/
+/mp_data_2_no_qz/
+/mp_data_2_no_qz_processed/
+/mp_data_numbers_processed/
+/mp_data_numbers/
+/test/
+/test_processed/
 /Logs/
 /Saved_Models/

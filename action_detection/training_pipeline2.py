@@ -51,8 +51,6 @@ def build_model(input_shape, actions_count):
         BatchNormalization(),
         LSTM(64, return_sequences=False, recurrent_dropout=0.25, dropout=0.3, activation='relu'),
         BatchNormalization(),
-        Dense(64, activation='relu'),
-        Dense(32, activation='relu'),
         Dense(actions_count, activation='softmax')
     ])
     return model

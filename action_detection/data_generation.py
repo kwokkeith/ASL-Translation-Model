@@ -92,6 +92,8 @@ def process_dataset(input_folder, output_folder):
                     keypoints = keypoints.reshape((num_keypoints, 3))
                 elif keypoints.ndim == 2 and keypoints.shape[1] == 3:
                     pass  # Already in correct shape
+                elif keypoints.ndim == 3:
+                    keypoints = keypoints.reshape(keypoints.shape[0], -1)
                 else:
                     raise ValueError(f"Unexpected keypoints shape: {keypoints.shape}")
 

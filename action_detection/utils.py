@@ -6,6 +6,8 @@ from tensorflow.keras.layers import LSTM, Dense, Input, \
     SpatialDropout1D, BatchNormalization
 from tensorflow.keras.optimizers import Adam, AdamW, SGD
 import matplotlib.pyplot as plt
+import os
+import joblib
 
 
 # Initialize Mediapipe modules
@@ -183,3 +185,14 @@ def plot_metric(model_training_history,
     plt.legend()
 
     return plt
+
+
+def load_pca_model(pca_model_path):
+    """Loads the pre-trained PCA model."""
+    if os.path.exists(pca_model_path):
+        pca = joblib.load(pca_model_path)
+        print(f"Loaded PCA model from {pca_model_path}")
+        return pca
+    else:
+        raise FileNotFoundError(f"PCA model not found at {pca_model_path}")
+

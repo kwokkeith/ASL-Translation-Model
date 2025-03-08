@@ -32,6 +32,35 @@ This repository contains Python scripts for training, evaluating, and running an
 
 ---
 
+### **data_generation.py** 
+📌 **Purpose:** This script applies **data augmentation** techniques on collected action keypoints to increase dataset diversity.
+
+🔹 **Arguments:**
+- `--i` (str, required): Path to the input dataset folder.
+- `--o` (str, required): Path to save the augmented dataset.
+
+🔹 **Key Features:**
+✅ Ensures unique sequence numbering for augmented sequences.  
+✅ Applies transformations to increase dataset generalisation.  
+
+---
+
+### **pca_preprocessing.py** 
+📌 **Purpose:** Applies **Principal Component Analysis (PCA)** to reduce dataset dimensionality for better training efficiency.
+
+🔹 **Arguments:**
+- `--skip` (int, default=`0`): Number of frames to skip.
+- `--sl` (int, default=`60`): Sequence length per action.
+- `--testsize` (int, default=`5`): Percentage of test split.
+- `--pca` (int, default=`50`): Number of PCA components.
+- `--i` (str, default=`mp_data`): Path to dataset folder (dataset NOT train_test).
+
+🔹 **Key Features:**
+✅ Saves trained PCA model (`pca_model.pkl`) to maintain feature consistency.  
+✅ Reduces input feature size while retaining significant variance.  
+
+---
+
 ### **merge_datasets.py**
 
 📌 **Purpose:** Merges multiple `mp_data` folders, ensuring unique sequence numbering, merging similar actions, and preventing circular merging issues.
@@ -65,6 +94,26 @@ This repository contains Python scripts for training, evaluating, and running an
 - `--epochs` (int, default=`500`): Number of epochs for training.
 - `--optimizer` (str, required, choices=[`Adam`, `SGD`, `AdamW`], default=`Adam`): Optimizer to use.
 - `--rate` (float, required, default=`0.001`): Learning rate.
+---
+
+### **training_pipeline.py** 🆕
+📌 **Purpose:** Automates the training process for multiple models and configurations.
+
+🔹 **Arguments:**
+- `--dataset` (str, required): Path to the dataset folder.
+- `--ood_dataset` (str, required): Path to out-of-domain dataset for evaluation.
+- `--output` (str, required): Path to store trained models and logs.
+- `--start_epoch` (int, default=`100`): Starting number of epochs.
+- `--end_epoch` (int, default=`500`): Maximum number of epochs.
+- `--interval` (int, default=`100`): Interval between training runs.
+- `--optimizer` (str, default=`Adam`): Optimiser (`Adam`, `SGD`, `AdamW`).
+- `--rate` (float, default=`0.001`): Learning rate.
+
+🔹 **Key Features:**
+✅ Runs multiple training sessions across different epoch counts.  
+✅ Evaluates performance using accuracy, F1-score, and confusion matrices.  
+✅ Supports out-of-domain (OOD) testing for robustness.  
+✅ Saves results to CSV for analysis.  
 
 ---
 
@@ -82,7 +131,9 @@ This repository contains Python scripts for training, evaluating, and running an
 - `--mptc` (float, default=`0.5`): Minimum Mediapipe tracking confidence.
 - `--freeze` (int, default=`10`): Number of stable predictions required before displaying.
 - `--sentences` (int, default=`5`): Number of actions to store and display on screen.
-
+- `--interval`	(int, default=`5`):	Time interval (in seconds) for triggering action translation.
+- `--pca_enabled` (bool, default=`False`): Set to True if using PCA for dimensionality reduction.
+- `--pca_path`	(str, default=`None`): Path to the saved PCA model (.pkl file) used during training.
 ---
 
 ### **utils.py**
@@ -126,31 +177,44 @@ python -c "import numpy as np; print(np.__version__)"
 python data_collection.py --actions jump run walk --ns 30 --sl 60
 ```
 
-### **2️⃣ Create Train/Test Splits**
+### **2️⃣ Apply Data Augmentation**  
+
+```sh
+python data_generation.py --i mp_data --o mp_data_augmented
+```
+
+### **3️⃣ Preprocess with PCA
+
+```sh
+python pca_preprocessing.py --skip 2 --sl 60 --testsize 5 --pca 50
+```
+
+### **4️⃣ Create Train/Test Splits**
 
 ```sh
 python create_train_test.py --skip 2 --sl 60 --testsize 5
 ```
 
-### **3️⃣ Train the Model**
+### **5️⃣ Train the Model**
 
 ```sh
 python train_model.py --dataset mp_data_processed/skip_2_testsize_5 --epochs 500 --optimizer Adam
 ```
 
-### **4️⃣ Evaluate the Model**
+### **6️⃣ Evaluate the Model**
 
 ```sh
 python evaluate_model.py --weights Saved_Models/model_weights.h5 --dataset mp_data_processed/skip_2_testsize_5
 ```
 
-### **5️⃣ Run Live Action Detection**
+### **7️⃣ Run Live Action Detection**
 
 ```sh
 python run_live.py --weights Saved_Models/model_weights.h5 --dataset mp_data_processed/skip_2_testsize_5
 ```
 
 ---
+
 
 ## 📌 **Contributing**
 

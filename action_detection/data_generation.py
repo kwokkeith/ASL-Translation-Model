@@ -105,6 +105,7 @@ def process_dataset(input_folder, output_folder):
                 keypoints_jittered = add_jitter(keypoints_augmented)
 
                 # Save the augmented keypoints
+                # Flatten the augmented keypoints before saving
                 np.save(output_augmented_frame_path, keypoints_jittered)
 
             next_sequence_num += 1  # Move to the next available sequence for the next augmentation

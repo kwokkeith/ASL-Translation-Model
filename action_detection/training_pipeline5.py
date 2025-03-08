@@ -45,8 +45,6 @@ def build_model(input_shape, actions_count):
     """Builds and returns the LSTM model."""
     model = Sequential([
         SpatialDropout1D(0.3),
-        LSTM(64, return_sequences=True, recurrent_dropout=0.25, dropout=0.3, activation='relu', input_shape=input_shape),
-        BatchNormalization(),
         LSTM(128, return_sequences=True, recurrent_dropout=0.25, dropout=0.3, activation='relu'),
         BatchNormalization(),
         LSTM(64, return_sequences=False, recurrent_dropout=0.25, dropout=0.3, activation='relu'),
@@ -78,14 +76,11 @@ def train_and_evaluate(model, optimizer, X_train, Y_train, X_test, Y_test, X_ood
     os.makedirs(log_dir, exist_ok=True)
     tb_callback = TensorBoard(log_dir=log_dir)
 
-    #early_stopping_callback = EarlyStopping(monitor='val_loss', patience=25, mode='min', restore_best_weights=True)
+    early_stopping_callback = EarlyStopping(monitor='val_loss', patience=25, mode='min', restore_best_weights=True)
 
     print(f"Training model for {epochs} epochs...")
-    if X_train.ndim==4:
-        X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], -1)    
-
-    history = model.fit(X_train, Y_train, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=[tb_callback])
-    #history = model.fit(X_train, Y_train, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=[tb_callback, early_stopping_callback])
+    
+    history = model.fit(X_train, Y_train, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=[tb_callback, early_stopping_callback])
 
     # Save Model & Weights
     model_save_path = get_model_save_path(output_dir, dataset_name, optimizer.__class__.__name__, epochs)
@@ -106,7 +101,7 @@ def train_and_evaluate(model, optimizer, X_train, Y_train, X_test, Y_test, X_ood
 
     # Save Training Results to CSV
     results_csv_path = os.path.join(output_dir, "training_results.csv")
-    save_results_to_csv(results_csv_path, epochs, acc, f1, history.history["val_loss"][-1], history.history["val_categorical_accuracy"][-1], class_report, ood_class_report, conf_matrix, ood_conf_matrix)
+    save_results_to_csv(results_csv_path, epochs, acc, f1, history.history["loss"][-1], history.history["categorical_accuracy"][-1], class_report, ood_class_report, conf_matrix, ood_conf_matrix)
 
     print(f"Model trained for {epochs} epochs and results saved successfully!")
 

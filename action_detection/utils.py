@@ -79,6 +79,13 @@ def draw_styled_landmarks(image, results):
                               )
 
 
+def get_hand_keypoints(feature_array):
+    """Extracts left-hand and right-hand keypoints from the feature vector"""
+    lh = feature_array[1536:1599].reshape(21, 3)  # (21, 3)
+    rh = feature_array[1599:1662].reshape(21, 3)  # (21, 3)
+    return lh, rh
+
+
 def extract_keypoints(results):
     """Extract Keypoints from mediapipe in form of np array"""
     pose = np.array([[res.x, res.y, res.z, res.visibility]

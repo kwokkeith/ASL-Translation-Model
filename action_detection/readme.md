@@ -13,6 +13,8 @@ This repository contains Python scripts for training, evaluating, and running an
 - `--skip` (int, default=`0`): Number of frames to skip to generalize the model.
 - `--sl` (int, default=`60`): Number of frames in a sequence.
 - `--testsize` (int, default=`5`): The test dataset split percentage.
+- `--i` (str, required): Test dataset (i.e. mp_data) to use for splitting
+- `--pca_path` (str, default=`none`): Path to the PCA model file (.pkl). If provided, applies PCA to the test set (only if splitting to test set). 
 
 ---
 

@@ -35,9 +35,9 @@ def load_dataset(dataset_dir, test_only=False):
 
     return np.load(X_train_path), np.load(X_test_path), np.load(Y_train_path), np.load(Y_test_path)
 
-def get_model_save_path(output_dir, dataset_name, optimizer, epochs):
+def get_model_save_path(output_dir, dataset_name, optimizer, epochs, run):
     """Generates a unique folder to save model weights."""
-    model_dir = os.path.join(output_dir, f"{dataset_name}_{optimizer}_epochs{epochs}")
+    model_dir = os.path.join(output_dir, f"{dataset_name}_{optimizer}_epochs{epochs}_run{run}")
     os.makedirs(model_dir, exist_ok=True)
     return model_dir
 
@@ -70,7 +70,7 @@ def evaluate_model(model, X_test, Y_test):
 
     return acc, f1, conf_matrix, class_report
 
-def train_and_evaluate(model, optimizer, X_train, Y_train, X_test, Y_test, X_ood_test, Y_ood_test, epochs, output_dir, dataset_name):
+def train_and_evaluate(model, optimizer, X_train, Y_train, X_test, Y_test, X_ood_test, Y_ood_test, epochs, output_dir, dataset_name, run):
     """Trains the model, saves results, and evaluates performance."""
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['categorical_accuracy'])
     
@@ -88,7 +88,7 @@ def train_and_evaluate(model, optimizer, X_train, Y_train, X_test, Y_test, X_ood
     #history = model.fit(X_train, Y_train, epochs=epochs, shuffle=True, validation_split=0.2, callbacks=[tb_callback, early_stopping_callback])
 
     # Save Model & Weights
-    model_save_path = get_model_save_path(output_dir, dataset_name, optimizer.__class__.__name__, epochs)
+    model_save_path = get_model_save_path(output_dir, dataset_name, optimizer.__class__.__name__, epochs, run)
     model.save(os.path.join(model_save_path, "model.h5"))
     model.save_weights(os.path.join(model_save_path, "model_weights.h5"))
 
@@ -171,12 +171,12 @@ def main():
     X_train, X_test, Y_train, Y_test = load_dataset(args.dataset)
     X_ood_test, Y_ood_test = load_dataset(args.ood_dataset, test_only=True)
     model = build_model(input_shape=(X_train.shape[1], X_train.shape[2]), actions_count=Y_train.shape[1])
-    
-    optimizer = {"Adam": Adam, "SGD": SGD, "AdamW": AdamW}[args.optimizer](learning_rate=args.rate)
 
     for epochs in range(args.start_epoch, args.end_epoch + 1, args.interval):
         for run in range(1, args.runs_per_epoch + 1):
-            train_and_evaluate(model, optimizer, X_train, Y_train, X_test, Y_test, X_ood_test, Y_ood_test, epochs, args.output, os.path.basename(args.dataset))
+            optimizer = {"Adam": Adam, "SGD": SGD, "AdamW": AdamW}[args.optimizer](learning_rate=args.rate, clipnorm=1.0)
+            model = build_model(input_shape=(X_train.shape[1], X_train.shape[2]), actions_count=Y_train.shape[1])
+            train_and_evaluate(model, optimizer, X_train, Y_train, X_test, Y_test, X_ood_test, Y_ood_test, epochs, args.output, os.path.basename(args.dataset), run)
 
 if __name__ == "__main__":
     main()

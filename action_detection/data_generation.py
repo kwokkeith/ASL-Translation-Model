@@ -8,7 +8,7 @@ def augment_keypoints(keypoints):
     But... may not capture new unseen poses"""
 
     # 1. Small random scaling
-    scale_factor = np.random.uniform(0.9, 1.1)
+    scale_factor = np.random.uniform(0.95, 1.05)
     keypoints_scaled = keypoints * scale_factor
 
     # 2. Small random translation (shift)
@@ -16,7 +16,7 @@ def augment_keypoints(keypoints):
     keypoints_translated = keypoints_scaled + translation
 
     # 3. Small rotation in 2D (X, Y only)
-    theta = np.radians(np.random.uniform(-10, 10))  # Random angle
+    theta = np.radians(np.random.uniform(-5, 5))  # Random angle
     rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], 
                                 [np.sin(theta), np.cos(theta)]])
     
@@ -29,7 +29,7 @@ def augment_keypoints(keypoints):
     return keypoints_rotated
 
 
-def add_jitter(sequence, noise_level=0.02):
+def add_jitter(sequence, noise_level=0.01):
     """Adds small random noise to each frame."""
     return sequence + np.random.normal(0, noise_level, sequence.shape)
 

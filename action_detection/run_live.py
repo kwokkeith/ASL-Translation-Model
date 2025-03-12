@@ -14,6 +14,7 @@ from tensorflow.keras.layers import LSTM, Dense, Input, \
 from llama2_translation import get_response
 import threading
 import queue
+import joblib
 
 # Initialize Mediapipe
 mp_holistic = mp.solutions.holistic
@@ -104,62 +105,51 @@ def main():
     parser.add_argument("--mptc", type=float, default=0.5,
                         help="Minimum tracking confidence mediapipe model")
     parser.add_argument("--freeze", type=int, default=10,
-                        help="Number of predictions before a prediction \
-                        is valid and displayed")
+                        help="Number of predictions before a prediction is valid and displayed")
     parser.add_argument("--sentences", type=int, default=5,
                         help="Number of actions to keep and display")
     parser.add_argument("--interval", type=int, default=5,
                         help="Time interval for sentences to be identified and passed")
+    parser.add_argument("--pca_enabled", type=bool, required=True,
+                        help="Toggles if PCA was used")
+    parser.add_argument("--pca_path", type=str, default=None,
+                        help="Path to saved PCA model (.pkl)")
 
     args = parser.parse_args()
 
-    # Create a queue to hold sentences
-    # sentence_queue = queue.Queue(maxsize=10)
-
-    # Load dataset
+    # Load dataset actions
     actions = np.array([folder for folder in os.listdir(
         args.dataset) if os.path.isdir(os.path.join(args.dataset, folder))])
     num_classes = len(actions)
 
-    # Extract sequence length from model
-    # sequence_length, feature_length = get_model_input_shape(args.weights)
-    sequence_length = 15
-    feature_length=1662
+    # Load PCA model if enabled
+    pca = None
+    if args.pca_enabled:
+        if args.pca_path is None:
+            print("Error: PCA is enabled but no path provided for the PCA model.")
+            return
+        print(f"Loading PCA model from: {args.pca_path}")
+        pca = joblib.load(args.pca_path)
 
-    print(
-        f"Model trained with sequence length: {sequence_length}, " +
-        f"feature length: {feature_length}")
-
-    # Load optimizer
-    # optimizer = extract_optimizer_from_path(args.weights, args.rate)
-
-    # Build and compile the model with correct input shape
+    # Load LSTM Model
     model = load_model(args.model)
-    # model = build_model(input_shape=(
-        # sequence_length, feature_length), num_classes=num_classes)
-    # model.compile(optimizer=optimizer, loss='categorical_crossentropy',
-                #   metrics=['categorical_accuracy'])
-
-    # Load trained weights
-    # model.load_weights(args.weights)
     print(f"Loaded model weights from: {args.model}")
 
-    # Initialize variables
+    # Initialize sequence storage
     sequence = []
     sentence = []
     predictions = []
     lock = threading.Lock()
     processed_flag = [False]
-    threshold = args.threshold  # Confidence threshold
+    threshold = args.threshold
 
-    # Start the translation worker thread
+    # Start translation worker thread
     worker_thread = threading.Thread(target=translation_worker, args=(args.interval, sentence, lock, processed_flag))
-    worker_thread.daemon = True  # Ensure the thread exits when the main program does
+    worker_thread.daemon = True
     worker_thread.start()
 
     # Find the first available camera
     camera_index = find_first_available_camera()
-
     if camera_index is None:
         print("Unable to find a camera that is available")
         return
@@ -167,7 +157,6 @@ def main():
     # Open webcam
     cap = cv2.VideoCapture(camera_index)
 
-    # Set up Mediapipe model with user-defined confidence values
     with mp_holistic.Holistic(min_detection_confidence=args.mpdc,
                               min_tracking_confidence=args.mptc) as holistic:
         while cap.isOpened():
@@ -182,18 +171,21 @@ def main():
 
             # Extract keypoints
             keypoints = extract_keypoints(results)
-            sequence.append(keypoints)
-            # Adjust based on model input shape
-            sequence = sequence[-sequence_length:]
 
-            # Define text positions
-            start_x, start_y = 30, 50
-            line_spacing = 50  # Space between lines
+            # Apply PCA if enabled
+            if args.pca_enabled and pca is not None:
+                keypoints = keypoints.reshape(1, -1)  # Flatten to (1, feature_dim)
+                keypoints = pca.transform(keypoints)  # Apply PCA
+                keypoints = keypoints.flatten()  # Convert back to 1D array
+
+            sequence.append(keypoints)
+
+            # Keep only the last `sequence_length` frames
+            sequence = sequence[-15:]
 
             # Only run prediction when we have enough frames
-            if len(sequence) == sequence_length:
-                res = model.predict(np.expand_dims(sequence, axis=0), verbose = 0)[
-                    0]  # Get probabilities
+            if len(sequence) == 15:
+                res = model.predict(np.expand_dims(sequence, axis=0), verbose=0)[0]
                 predicted_action = actions[np.argmax(res)]
                 confidence = res[np.argmax(res)]
 
@@ -201,44 +193,27 @@ def main():
 
                 # Check if action is stable across last `freeze` frames
                 if len(predictions) > args.freeze and \
-                        np.unique(
-                            predictions[-args.freeze:])[0] == np.argmax(res):
+                        np.unique(predictions[-args.freeze:])[0] == np.argmax(res):
                     if confidence > threshold:
                         if len(sentence) == 0 or \
                                 predicted_action != sentence[-1]:
-                                sentence.append(predicted_action)
+                            sentence.append(predicted_action)
 
                 if len(sentence) > args.sentences:
-                    # Keep last args.sentences actions
                     sentence = sentence[-args.sentences:]
 
                 if processed_flag[0]:
                     with lock:
                         sentence.clear()
-                        processed_flag[0] = False # Reset flag
+                        processed_flag[0] = False  # Reset flag
 
-                # Display action, confidence & accuracy
+                # Display action and confidence
                 cv2.putText(image, f"Action: {predicted_action}",
-                            (start_x, start_y),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1,
+                            (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (255, 255, 255), 2, cv2.LINE_AA)
                 cv2.putText(image, f"Confidence: {confidence:.2f}",
-                            (start_x, start_y + line_spacing),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1,
+                            (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (255, 255, 255), 2, cv2.LINE_AA)
-
-            # Move background rectangle JUST BELOW the confidence text
-            # Start right after confidence text
-            rect_y_start = start_y + 2 * line_spacing
-            rect_y_end = rect_y_start + 40  # Make sure it’s not too tall
-
-            cv2.rectangle(image, (0, rect_y_start),
-                          (640, rect_y_end), (245, 117, 16), -1)
-
-            # Display detected actions
-            cv2.putText(image, ' '.join(sentence), (10, rect_y_start + 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1,
-                        (255, 255, 255), 2, cv2.LINE_AA)
 
             # Show video feed
             cv2.imshow('Action Recognition', image)

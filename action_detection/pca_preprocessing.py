@@ -4,6 +4,7 @@ import argparse
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
+import joblib
 
 def load_keypoints(data_path, actions, sequence_length, skip_frame):
     """Loads keypoints from dataset and applies PCA."""
@@ -38,22 +39,29 @@ def load_keypoints(data_path, actions, sequence_length, skip_frame):
     Y = to_categorical(labels).astype(int)  
     return X, Y
 
-def apply_pca(X, num_components=50):
-    """Applies PCA to reduce dimensionality while keeping data format intact."""
+def apply_pca(X, num_components=50, save_path=None):
+    """Applies PCA to reduce dimensionality and saves the trained PCA model."""
+    
     if X.ndim == 4:
         num_samples, num_timesteps, num_keypoints, num_features = X.shape
-        X_reshaped = X.reshape(num_samples * num_timesteps, -1)  # Flatten for PCA
-    elif X.ndim == 3:  # If keypoints are already flattened
+        X_reshaped = X.reshape(num_samples * num_timesteps, -1)  
+    elif X.ndim == 3:
         num_samples, num_timesteps, num_features = X.shape
-        X_reshaped = X.reshape(num_samples * num_timesteps, num_features)  # Keep as-is
+        X_reshaped = X.reshape(num_samples * num_timesteps, num_features)  
     else:
         raise ValueError(f"Unexpected input shape: {X.shape}")
 
+    # Fit PCA
     pca = PCA(n_components=num_components)
     X_pca = pca.fit_transform(X_reshaped)
 
     explained_variance = sum(pca.explained_variance_ratio_) * 100
     print(f"PCA Reduced to {num_components} components, retaining {explained_variance:.2f}% variance.")
+
+    # Save PCA model
+    if save_path:
+        joblib.dump(pca, save_path)
+        print(f"PCA model saved at {save_path}")
 
     X_pca = X_pca.reshape(num_samples, num_timesteps, num_components)
     return X_pca, pca
@@ -92,16 +100,20 @@ def main():
     X, Y = load_keypoints(data_path, actions, args.sl, args.skip)
 
     print("Applying PCA...")
-    X_pca, pca = apply_pca(X, args.pca)
 
-    save_dir = get_storage_directory(processed_data_path, args.skip, args.testsize, args.pca)
+    # Create a subdirectory for the current PCA configuration
+    save_dir = get_storage_directory(processed_data_path, args.skip, args.testsize, args.pca) 
+
+    # Define path to save the PCA model
+    pca_model_path = os.path.join(save_dir, "pca_model.pkl")
+
+    # Apply PCA and save the model
+    X_pca, pca = apply_pca(X, args.pca)
+    joblib.dump(pca, pca_model_path)  # Save the trained PCA model
 
     # Ensure X_train and X_test have 3 dimensions (samples, timesteps, features)
     if X_pca.ndim == 4:
         X_pca = X_pca.reshape(X_pca.shape[0], X_pca.shape[1], -1)
-    
-    if pca.ndim == 4:
-        pca = pca.reshape(pca.shape[0], pca.shape[1], -1)
 
     if args.testsize != 100.0:
         X_train, X_test, Y_train, Y_test = train_test_split(X_pca, Y, test_size=args.testsize / 100.0)
@@ -109,8 +121,6 @@ def main():
         np.save(os.path.join(save_dir, "X_train.npy"), X_train)
         np.save(os.path.join(save_dir, "Y_train.npy"), Y_train)
     else:
-
-        
         X_test, Y_test = X_pca, Y
 
     np.save(os.path.join(save_dir, "X_test.npy"), X_test)

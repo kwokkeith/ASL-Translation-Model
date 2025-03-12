@@ -6,6 +6,8 @@ from tensorflow.keras.layers import LSTM, Dense, Input, \
     SpatialDropout1D, BatchNormalization
 from tensorflow.keras.optimizers import Adam, AdamW, SGD
 import matplotlib.pyplot as plt
+import os
+import joblib
 
 
 # Initialize Mediapipe modules
@@ -75,6 +77,13 @@ def draw_styled_landmarks(image, results):
                                   color=(245, 66, 230),
                                   thickness=2, circle_radius=2)
                               )
+
+
+def get_hand_keypoints(feature_array):
+    """Extracts left-hand and right-hand keypoints from the feature vector"""
+    lh = feature_array[1536:1599].reshape(21, 3)  # (21, 3)
+    rh = feature_array[1599:1662].reshape(21, 3)  # (21, 3)
+    return lh, rh
 
 
 def extract_keypoints(results):
@@ -183,3 +192,14 @@ def plot_metric(model_training_history,
     plt.legend()
 
     return plt
+
+
+def load_pca_model(pca_model_path):
+    """Loads the pre-trained PCA model."""
+    if os.path.exists(pca_model_path):
+        pca = joblib.load(pca_model_path)
+        print(f"Loaded PCA model from {pca_model_path}")
+        return pca
+    else:
+        raise FileNotFoundError(f"PCA model not found at {pca_model_path}")
+

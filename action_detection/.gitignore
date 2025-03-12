@@ -5,3 +5,4 @@
 /Saved_Models/
 /mp_data*
 /output*
+training_pipeline[0-9]*.py

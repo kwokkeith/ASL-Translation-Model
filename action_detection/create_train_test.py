@@ -3,6 +3,7 @@ import os
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 import argparse
+import joblib
 
 
 def create_label_features(actions,
@@ -46,6 +47,23 @@ def create_label_features(actions,
     return X, Y
 
 
+def apply_pca(X, pca_path):
+    """Applies PCA transformation to reduce dimensionality."""
+    print(f"Loading PCA model from {pca_path}...")
+    pca = joblib.load(pca_path)
+
+    # Reshape X for PCA transformation
+    num_samples, num_timesteps, num_features = X.shape
+    X_reshaped = X.reshape(num_samples * num_timesteps, -1)
+
+    # Apply PCA
+    X_pca = pca.transform(X_reshaped)
+    X_pca = X_pca.reshape(num_samples, num_timesteps, -1)
+
+    print(f"PCA applied: Transformed shape {X_pca.shape}")
+    return X_pca
+
+
 def get_storage_directory(base_dir, skip, testsize):
     """Generates a new unique folder name for storing dataset splits"""
     config_prefix = f"skip_{skip}_testsize_{testsize}"
@@ -73,6 +91,9 @@ def main():
     parser.add_argument("--i", type=str, default="mp_data",
                         help="Test dataset (i.e. mp_data) \
                         to use for splitting")
+    parser.add_argument("--pca_path", type=str, default=None,
+                        help="Path to the PCA model file (.pkl). If provided, applies PCA to the test set.")
+
     args = parser.parse_args()
 
     # path for exported data, numpy arrays
@@ -103,7 +124,11 @@ def main():
         np.save(os.path.join(save_dir, "X_train.npy"), X_train)
         np.save(os.path.join(save_dir, "Y_train.npy"), Y_train)
     else:
+        # If only creating test set, check if PCA should be applied
         X_test, Y_test = feature, target
+        if args.pca_path:
+            X_test = apply_pca(X_test, args.pca_path)
+
 
     # Save datasets
     np.save(os.path.join(save_dir, "X_test.npy"), X_test)

@@ -1,6 +1,10 @@
 /venv/
 /MP_Data/
-/mp_data_1/
-/mp_data_1_processed/
+/test/
+/test_processed/
 /Logs/
-/Saved_Models/
+/Saved_Models*
+/mp_data*
+/utils1/__pycache__/
+keypoint_numbers.csv
+keypoint_newest.csv

@@ -85,28 +85,26 @@ def process_dataset(input_folder, output_folder):
                 # Load the original keypoints
                 keypoints = np.load(frame_path)
 
-                # Reshape keypoints to ensure correct format
-                # Ensure correct shape (frames, num_keypoints, 3)
                 if keypoints.ndim == 1:
-                    num_keypoints = keypoints.size // 3
-                    keypoints = keypoints.reshape((num_keypoints, 3))
+                    expected_size = 1662  # Assuming each frame should be (1662,)
+                    if keypoints.size != expected_size:
+                        raise ValueError(f"Unexpected keypoints size: {keypoints.size}, expected {expected_size}")
                 elif keypoints.ndim == 2 and keypoints.shape[1] == 3:
-                    pass  # Already in correct shape
-                elif keypoints.ndim == 3:
-                    keypoints = keypoints.reshape(keypoints.shape[0], -1)
-                else:
-                    raise ValueError(f"Unexpected keypoints shape: {keypoints.shape}")
+                    keypoints = keypoints.flatten()  # Convert to (1662,) format
 
                 # Save the original keypoints
                 np.save(output_frame_path, keypoints)
 
+                keypoints_reshaped = keypoints.reshape(-1, 3)
+
                 # Apply augmentations
-                keypoints_augmented = augment_keypoints(keypoints)
+                keypoints_augmented = augment_keypoints(keypoints_reshaped)
                 keypoints_jittered = add_jitter(keypoints_augmented)
 
                 # Save the augmented keypoints
                 # Flatten the augmented keypoints before saving
-                np.save(output_augmented_frame_path, keypoints_jittered)
+                print(f"saving frame from {frame_path} --> {output_augmented_frame_path}", frame_path, output_augmented_frame_path)
+                np.save(output_augmented_frame_path, keypoints_jittered.flatten())
 
             next_sequence_num += 1  # Move to the next available sequence for the next augmentation
 

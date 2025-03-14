@@ -84,13 +84,26 @@ def extract_keypoints(results):
     # face = np.array([[res.x, res.y, res.z]
     #                  for res in results.face_landmarks.landmark]) \
     #     .flatten() if results.face_landmarks else np.zeros(468*3)
-    lh = np.array([[res.x, res.y]
-                   for res in results.left_hand_landmarks.landmark]) \
-        
-    # rh = np.array([[res.x, res.y]
-    #                for res in results.right_hand_landmarks.landmark]) \
-    #     .flatten() if results.right_hand_landmarks else np.zeros(21*2)
-    return np.concatenate([lh])
+    if results.left_hand_landmarks:
+        lh = np.array([[res.x, res.y]
+                    for res in results.left_hand_landmarks.landmark]) 
+    else:
+        lh = np.zeros((21, 2))
+    
+    if results.right_hand_landmarks:
+        rh = np.array([[res.x, res.y]
+                    for res in results.right_hand_landmarks.landmark])
+    else:
+        rh = np.zeros((21, 2))
+
+    if results.left_hand_landmarks:
+        return np.concatenate([lh])
+    elif results.right_hand_landmarks:
+        return np.concatenate([rh])
+    else:
+        return np.zeros(42)
+            
+    # return np.concatenate([rh])
 
 
 def build_model(num_classes):

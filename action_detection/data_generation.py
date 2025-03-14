@@ -87,15 +87,15 @@ def process_dataset(input_folder, output_folder):
 
                 # Reshape keypoints to ensure correct format
                 # Ensure correct shape (frames, num_keypoints, 3)
-                if keypoints.ndim == 1:
-                    num_keypoints = keypoints.size // 3
-                    keypoints = keypoints.reshape((num_keypoints, 3))
-                elif keypoints.ndim == 2 and keypoints.shape[1] == 3:
-                    pass  # Already in correct shape
-                elif keypoints.ndim == 3:
-                    keypoints = keypoints.reshape(keypoints.shape[0], -1)
-                else:
-                    raise ValueError(f"Unexpected keypoints shape: {keypoints.shape}")
+                # if keypoints.ndim == 1:
+                #     num_keypoints = keypoints.size // 3
+                #     keypoints = keypoints.reshape((num_keypoints, 3))
+                # elif keypoints.ndim == 2 and keypoints.shape[1] == 3:
+                #     pass  # Already in correct shape
+                # elif keypoints.ndim == 3:
+                #     keypoints = keypoints.reshape(keypoints.shape[0], -1)
+                # else:
+                #     raise ValueError(f"Unexpected keypoints shape: {keypoints.shape}")
 
                 # Save the original keypoints
                 np.save(output_frame_path, keypoints)

@@ -114,6 +114,8 @@ def main():
                         help="Toggles if PCA was used")
     parser.add_argument("--pca_path", type=str, default=None,
                         help="Path to saved PCA model (.pkl)")
+    parser.add_argument("--enable_translation", type=bool, default=False,
+                        help="Determines if should use LLM to translate sign words to phrases")
 
     args = parser.parse_args()
 
@@ -144,9 +146,10 @@ def main():
     threshold = args.threshold
 
     # Start translation worker thread
-    worker_thread = threading.Thread(target=translation_worker, args=(args.interval, sentence, lock, processed_flag))
-    worker_thread.daemon = True
-    worker_thread.start()
+    if args.enable_translation:
+        worker_thread = threading.Thread(target=translation_worker, args=(args.interval, sentence, lock, processed_flag))
+        worker_thread.daemon = True
+        worker_thread.start()
 
     # Find the first available camera
     camera_index = find_first_available_camera()

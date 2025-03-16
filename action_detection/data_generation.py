@@ -31,6 +31,7 @@ def augment_keypoints(keypoints):
 
 def add_jitter(sequence, noise_level=0.01):
     """Adds small random noise to each frame."""
+    noise_level = 0
     return sequence + np.random.normal(0, noise_level, sequence.shape)
 
 def process_dataset(input_folder, output_folder):

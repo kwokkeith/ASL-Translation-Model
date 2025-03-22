@@ -122,18 +122,26 @@ def process_frame(results):
     return True
 
 
-def predict_gesture():
+def predict_gesture(threshold=0.2):
     global latest_prediction, latest_confidence
     if len(movement_cache) < sequence_length:
         return
+
     avg_movement = np.array([[np.mean(movement_cache)]])
     if np.isnan(avg_movement).any():
         return
-    probabilities = model.predict_proba(avg_movement)[0]
-    predicted_label = model.predict(avg_movement)[0]
-    latest_confidence = np.max(probabilities) * 100
-    latest_prediction = "Dynamic" if predicted_label == 1 else "Static"
 
+    probabilities = model.predict_proba(avg_movement)[0]
+    prob_dynamic = probabilities[1]  
+    latest_confidence = prob_dynamic * 100
+
+    if prob_dynamic >= threshold:
+        latest_prediction = "Dynamic"
+    else:
+        latest_prediction = "Static"
+
+
+    
 cap = cv2.VideoCapture(0)
 with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
     while cap.isOpened():

@@ -12,10 +12,10 @@ mp_draw = mp.solutions.drawing_utils
 # Store last 60 frames of hand landmark positions
 prev_hand_positions = {}
 motion_history = {}
-frame_window = 30  # Number of frames to analyze FFT
+# frame_window = 30  # Number of frames to analyze FFT
 fps = 15  # Assume 15 FPS for FFT calculation
 
-def detect_motion_status(frame):
+def detect_motion_status(frame, frame_window):
     """Detects if the motion is Static or Dynamic."""
     global prev_hand_positions, motion_history
     

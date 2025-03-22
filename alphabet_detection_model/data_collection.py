@@ -154,7 +154,7 @@ def main():
     print(f"actions to record {args.actions}")
 
     # path for exported data, numpy arrays
-    data_path = os.path.join('mp_data_newest')
+    data_path = os.path.join('mp_data_non_normalized')
 
     # actions to detect
     actions = np.array(args.actions)
@@ -203,11 +203,12 @@ def main():
 
                         # Detections to get landmarks face, shoulder and hands
                         image, results = mediapipe_detection(frame, holistic)
+                        hand_landmarks = extract_keypoints(results)
 
+                        # Default to zero when no hand landmarks are detected
+                        processed_keypoints = np.zeros(42)
 
-                        if results.left_hand_landmarks is not None:
-                            hand_landmarks = extract_keypoints(results)
-
+                        if np.any(hand_landmarks):
                             # for hand_landmark in hand_landmarks:
                             keypoints = calc_landmark_list(image, hand_landmarks)
                             processed_keypoints = pre_process_landmark(keypoints)
@@ -266,7 +267,7 @@ def main():
                             str(frame_num))
                         np.save(npy_path, processed_keypoints)
 
-                        csv_path = "model/keypoint_classifier/keypoint_newest.csv"
+                        csv_path = "model/keypoint_classifier/keypoint_test.csv"
                         log_keypoints_to_csv(csv_path, action, processed_keypoints)
 
                         # Break gracefully

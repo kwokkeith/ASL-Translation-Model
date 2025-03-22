@@ -10,3 +10,6 @@
 /mp_data*
 /output*
 training_pipeline[0-9]*.py
+/statistic_output
+data_visualisation_dataset
+/final/

@@ -77,7 +77,7 @@ def build_model(num_classes):
 def draw_info(image, fps, word):
     cv2.putText(image, "FPS: " + str(fps), (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-    cv2.putText(image, word, (200, 500),
+    cv2.putText(image, word, (100, 300),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
     return image
 
@@ -166,9 +166,9 @@ def main():
             # Make detections
             image, results = mediapipe_detection(frame, holistic)
             draw_styled_landmarks(image, results)
+            hand_landmarks = extract_keypoints(results)
 
-            if results.left_hand_landmarks is not None:
-                hand_landmarks = extract_keypoints(results)
+            if np.any(hand_landmarks):
                 keypoints = calc_landmark_list(image, hand_landmarks)
                 processed_keypoints = pre_process_landmark(keypoints)
 

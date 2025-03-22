@@ -31,9 +31,10 @@ def augment_keypoints(keypoints):
 
 def add_jitter(sequence, noise_level=0.01):
     """Adds small random noise to each frame."""
+    noise_level = 0
     return sequence + np.random.normal(0, noise_level, sequence.shape)
 
-def process_dataset(input_folder, output_folder):
+def process_dataset(input_folder, output_folder, loop):
     """Processes input dataset, saves original and augmented keypoints while
     maintaining order and adding new sequences starting from the highest sequence number + 1."""
 
@@ -41,6 +42,9 @@ def process_dataset(input_folder, output_folder):
         os.makedirs(output_folder)
 
     for action in sorted(os.listdir(input_folder)):
+        if action.startswith("."):  # Ignore hidden files
+            continue
+
         print(f"Saving for {action}")
         action_path = os.path.join(input_folder, action)
         if not os.path.isdir(action_path):
@@ -58,17 +62,13 @@ def process_dataset(input_folder, output_folder):
             print(f"No sequences found for action '{action}'. Skipping...")
             continue
 
-        highest_sequence_num = existing_sequences[-1]  # Get the max sequence index
-        next_sequence_num = highest_sequence_num + 1  # Start augmented sequences after the last original one
+        highest_sequence_num = existing_sequences[-1]  
+        next_sequence_num = highest_sequence_num + 1  
 
         for sequence in existing_sequences:
             sequence_path = os.path.join(action_path, str(sequence))
-
             output_sequence_path = os.path.join(output_action_path, str(sequence))
             os.makedirs(output_sequence_path, exist_ok=True)
-
-            augmented_sequence_path = os.path.join(output_action_path, str(next_sequence_num))
-            os.makedirs(augmented_sequence_path, exist_ok=True)
 
             for frame_file in sorted(
                 [f for f in os.listdir(sequence_path) if f.endswith('.npy')],
@@ -76,39 +76,48 @@ def process_dataset(input_folder, output_folder):
             ):
                 frame_path = os.path.join(sequence_path, frame_file)
 
-                # Save original keypoints in the same sequence number
                 output_frame_path = os.path.join(output_sequence_path, frame_file)
 
-                # Save augmented keypoints in the new sequence number
-                output_augmented_frame_path = os.path.join(augmented_sequence_path, frame_file)
+                if not os.path.exists(frame_path):
+                    print(f"Warning: Skipping missing file {frame_path}")
+                    continue
 
-                # Load the original keypoints
-                keypoints = np.load(frame_path)
+                try:
+                    keypoints = np.load(frame_path)
+                except Exception as e:
+                    print(f"Error loading {frame_path}: {e}")
+                    continue  
 
-                # Reshape keypoints to ensure correct format
-                # Ensure correct shape (frames, num_keypoints, 3)
+                # Ensure correct shape before saving
                 if keypoints.ndim == 1:
-                    num_keypoints = keypoints.size // 3
-                    keypoints = keypoints.reshape((num_keypoints, 3))
+                    expected_size = 1662  
+                    if keypoints.size != expected_size:
+                        raise ValueError(f"Unexpected keypoints size: {keypoints.size}, expected {expected_size}")
                 elif keypoints.ndim == 2 and keypoints.shape[1] == 3:
-                    pass  # Already in correct shape
-                elif keypoints.ndim == 3:
-                    keypoints = keypoints.reshape(keypoints.shape[0], -1)
-                else:
-                    raise ValueError(f"Unexpected keypoints shape: {keypoints.shape}")
+                    keypoints = keypoints.flatten()  
 
                 # Save the original keypoints
                 np.save(output_frame_path, keypoints)
 
-                # Apply augmentations
-                keypoints_augmented = augment_keypoints(keypoints)
-                keypoints_jittered = add_jitter(keypoints_augmented)
+                keypoints_reshaped = keypoints.reshape(-1, 3)
 
-                # Save the augmented keypoints
-                # Flatten the augmented keypoints before saving
-                np.save(output_augmented_frame_path, keypoints_jittered)
+                # Generate `loop` number of augmented sequences
+                for i in range(loop):
+                    augmented_sequence_num = next_sequence_num + i
+                    augmented_sequence_path = os.path.join(output_action_path, str(augmented_sequence_num))
+                    os.makedirs(augmented_sequence_path, exist_ok=True)  # Ensure directory exists
 
-            next_sequence_num += 1  # Move to the next available sequence for the next augmentation
+                    output_augmented_frame_path = os.path.join(augmented_sequence_path, frame_file)
+
+                    # Apply augmentations
+                    keypoints_augmented = augment_keypoints(keypoints_reshaped)
+                    keypoints_jittered = add_jitter(keypoints_augmented)
+
+                    # Save the augmented keypoints
+                    print(f"saving frame from {frame_path} --> {output_augmented_frame_path}")
+                    np.save(output_augmented_frame_path, keypoints_jittered.flatten())
+
+            next_sequence_num += loop  # Increment to prevent overwriting
 
     print(f"Original and augmented dataset saved to: {output_folder}")
 
@@ -116,7 +125,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Augment MediaPipe keypoints dataset.")
     parser.add_argument("--i", type=str, required=True, help="Path to the input dataset folder")
     parser.add_argument("--o", type=str, required=True, help="Path to save the augmented dataset")
-    
+    parser.add_argument("--n", type=int, default=1, help="Number of loops to generated keypoints")
+
     args = parser.parse_args()
     
-    process_dataset(args.i, args.o)
+    process_dataset(args.i, args.o, args.n)

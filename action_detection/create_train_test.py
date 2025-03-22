@@ -120,7 +120,7 @@ def main():
 
     if args.testsize != 100.0:
         X_train, X_test, Y_train, Y_test = train_test_split(
-            feature, target, test_size=args.testsize/100.0)
+            feature, target, test_size=args.testsize/100.0,stratify=target)
         np.save(os.path.join(save_dir, "X_train.npy"), X_train)
         np.save(os.path.join(save_dir, "Y_train.npy"), Y_train)
     else:

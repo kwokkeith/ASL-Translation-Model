@@ -5,6 +5,4 @@
 /Logs/
 /Saved_Models*
 /mp_data*
-/utils1/__pycache__/
-keypoint_numbers.csv
-keypoint_newest.csv
+keypoint_*.csv

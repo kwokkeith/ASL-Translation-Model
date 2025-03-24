@@ -45,7 +45,7 @@ latest_motion_label = "Unknown"
 lstm_model = None
 try:
     print(f"Loading LSTM model from: {LSTM_MODEL_PATH}")
-    actions_dynamic = np.array([folder for folder in os.listdir(DYNAMIC_MODEL_DATA) if os.path.isdir(os.path.join(DYNAMIC_MODEL_DATA, folder))])
+    actions_dynamic = ["your", "my", "what", "hello", "name"]
     print("Action dynamics list:", actions_dynamic)
     lstm_model = load_model(LSTM_MODEL_PATH)
 except Exception as e:

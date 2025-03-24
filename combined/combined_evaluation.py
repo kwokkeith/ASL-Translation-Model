@@ -8,13 +8,14 @@ import itertools
 from collections import deque
 import mediapipe as mp
 from tensorflow.keras.models import load_model
-from sklearn.metrics import classification_report, f1_score
+import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report, f1_score, ConfusionMatrixDisplay, confusion_matrix
 from utils import extract_keypoints_static, mediapipe_detection
 
 # Constants
 FRAME_WINDOW = 15
 PCA_ENABLED = True
-LOGISTIC_MODEL_PATH = "./model/logistic_regression_movement.joblib"
+LOGISTIC_MODEL_PATH = "./model/logistic_regression_movement_linear.joblib"
 PCA_PATH = "./model/pca_model.pkl"
 LSTM_MODEL_PATH = "./model/lstm_model.h5"
 STATIC_MODEL_PATH = "./model/static_model.h5"
@@ -145,7 +146,19 @@ def results_to_flat_keypoints(results):
     return np.array(keypoints)
 
 
-def classify_motion_from_sequence(sequence, threshold=0.2):
+def compute_weighted_avg(movements):
+    n = len(movements)
+    if n == 0:
+        return 0
+    weights = np.ones(n)
+    #higher weightage to recent frames
+    weights = np.linspace(1, 0.1, n)
+    
+    weights /= np.sum(weights)
+    return np.sum(movements * weights)
+
+
+def classify_motion_from_sequence(sequence, threshold=0.15):
     """
     Classifies motion from a sequence of 30 frames.
     Each frame should be a NumPy array of shape (1662,).
@@ -166,6 +179,8 @@ def classify_motion_from_sequence(sequence, threshold=0.2):
         xy_keypoints = scaled.reshape(42, 3)[:, :2]
         keypoint_list.append(xy_keypoints)
         valid_frame_indices.append(idx)
+
+    # compute_weighted_avg(keypoint_list) # Perform weight scaling
 
     # Require at least 3 valid frames to compute motion (2 diffs)
     if len(keypoint_list) < 3:
@@ -336,11 +351,32 @@ def main():
     y_true = y_true_dyn + y_true_static
     y_pred = y_pred_dyn + y_pred_static
 
-    print("\n Classification Report:\n")
-    print(classification_report(y_true, y_pred, zero_division=0))  # zero_division=0 avoids division by 0 errors
+    # Filter out samples where the TRUE label is "Unknown"
+    filtered = [(yt, yp) for yt, yp in zip(y_true, y_pred) if yt != "Unknown"]
+    y_true, y_pred = zip(*filtered)
+
+    print("\nClassification Report:\n")
+    print(classification_report(y_true, y_pred, zero_division=0))
 
     macro_f1 = f1_score(y_true, y_pred, average='macro', zero_division=0)
     print(f"Macro-averaged F1 Score: {macro_f1:.4f}")
+
+    # Plot confusion matrix
+    labels = sorted(list(set(y_true + y_pred)))  # Include 'Unknown' in predictions
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
+    fig, ax = plt.subplots(figsize=(10, 8))
+    disp.plot(ax=ax, cmap='Blues', xticks_rotation=45)
+    plt.title("Confusion Matrix")
+    plt.tight_layout()
+
+    # Save to file
+    output_path = "confusion_matrix.png"
+    plt.savefig(output_path)
+    print(f"Confusion matrix saved to: {output_path}")
+    plt.close()
+
 
 
 if __name__ == '__main__':

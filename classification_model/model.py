@@ -6,7 +6,7 @@ from collections import deque
 import time
 
 #LOAD MODEL
-model = joblib.load("./logistic_regression_movement.joblib")
+model = joblib.load("./training_utils/logistic_regression_movement_exponential.joblib")
 
 #init holistic model & drawing utils
 mp_holistic = mp.solutions.holistic
@@ -25,7 +25,7 @@ last_check_time = time.time()
 valid_frames_this_second = 0
 
 # Weighting strategy
-WEIGHTING = "linear"
+WEIGHTING = "exponential"
 
 def compute_weighted_avg(movements):
     n = len(movements)
@@ -122,7 +122,7 @@ def process_frame(results):
     return True
 
 
-def predict_gesture(threshold=0.2):
+def predict_gesture(threshold=0.18):
     global latest_prediction, latest_confidence
     if len(movement_cache) < sequence_length:
         return

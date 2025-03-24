@@ -29,3 +29,11 @@ model_backup.py
 ./logistic_regression_movement.joblib
 weighted_movement_features_backup.npy
 weighted_movement_labels_backup.npy
+/dynamic_test
+/dynamic_test_hands
+/static_test
+/static_test_hands
+visualize_roc.py
+normalization_visualization.ipynb
+mediapip.png
+generate_mediapipe_keypoints.py

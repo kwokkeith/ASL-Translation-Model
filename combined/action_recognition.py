@@ -19,7 +19,7 @@ def process_dynamic_sequence(model, actions, frames, pca):
     holistic = mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5)
     
     ## Take only the last 15 frames
-    frames = frames[:15]
+    frames = frames[-15:]
     sequence=[]
 
     for frame in frames:
@@ -39,8 +39,7 @@ def process_dynamic_sequence(model, actions, frames, pca):
         predicted_action = actions[np.argmax(res)]
         confidence = res[np.argmax(res)]
         predicted_label = np.argmax(res)
-        asl_labels = ["your", "my", "what", "hello", "name"]
 
-        return asl_labels[predicted_label]
+        return predicted_action
 
     return ""

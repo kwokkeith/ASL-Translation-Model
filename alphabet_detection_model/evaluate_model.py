@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import pandas as pd
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, TimeDistributed, BatchNormalization, Dropout
 from sklearn.metrics import multilabel_confusion_matrix, accuracy_score, classification_report, confusion_matrix
 import seaborn as sns
@@ -82,7 +82,7 @@ def evaluate_model(model, X_test, Y_test, labels, save_dir):
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate a trained model for per-frame inference")
-    parser.add_argument("--weights", type=str, required=True, help="Path to the saved model weights (.h5 file)")
+    parser.add_argument("--model", type=str, required=True, help="Path to the saved model (.h5 file)")
     parser.add_argument("--ld", type=str, required=True, help="Path to the dataset folder containing data")
     parser.add_argument("--dataset", type=str, required=True, help="Path to the dataset folder containing test data")
     parser.add_argument("--rate", type=float, default=0.001, help="Learning rate of the model to be loaded")
@@ -106,16 +106,13 @@ def main():
     # Extract number of classes from Y_test shape
     num_classes = len(np.unique(Y_test))
 
-    # Determine optimiser from model path
-    optimizer = extract_optimizer_from_path(args.weights, args.rate)
-
     # Build and compile the model
-    model = build_model(num_classes=num_classes)
-    model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    model = load_model(args.model)
+    # model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     # Load saved model weights
-    model.load_weights(args.weights)
-    print(f"Loaded weights from: {args.weights}")
+    # model.load_weights(args.weights, by_name=True, skip_mismatch=True)
+    print(f"Loaded model from: {args.model}")
 
     # Evaluate model
     evaluate_model(model, X_test, Y_test, labels, args.dataset)

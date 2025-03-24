@@ -9,6 +9,7 @@ from utils1.cvfpscalc import CvFpsCalc
 import copy
 import itertools
 from model.keypoint_classifier.keypoint_classifier import KeyPointClassifier
+from tensorflow.keras.models import load_model
 
 
 # Global variables for accumulating predicted alphabets
@@ -19,8 +20,8 @@ prev_sign = None
 def get_args():
     parser = argparse.ArgumentParser(
         description="Run live alphabet recognition using a trained model")
-    parser.add_argument("--weights", type=str, required=True,
-                        help="Path to the model weights (.h5 file)")
+    parser.add_argument("--model", type=str, required=True,
+                        help="Path to the model (.h5 file)")
     parser.add_argument("--dataset", type=str, required=True,
                         help="Path to the dataset folder containing label subdirectories")
     parser.add_argument("--mpdc", type=float, default=0.7,
@@ -123,13 +124,9 @@ def main():
     num_classes = len(actions)
     print("Alphabet labels:", actions)
 
-    optimizer = extract_optimizer_from_path(args.weights, args.rate)
-
     # Build and load the model
-    model = build_model(num_classes=num_classes)
-    model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-    model.load_weights(args.weights)
-    print("Loaded model weights from:", args.weights)
+    model= load_model(args.model)
+    print("Loaded model weights from:", args.model)
 
     # Initialize Mediapipe Holistic
     mp_holistic = mp.solutions.holistic

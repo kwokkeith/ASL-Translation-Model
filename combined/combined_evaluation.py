@@ -15,7 +15,7 @@ from utils import extract_keypoints_static, mediapipe_detection
 # Constants
 FRAME_WINDOW = 15
 PCA_ENABLED = True
-LOGISTIC_MODEL_PATH = "./model/logistic_regression_movement_linear.joblib"
+LOGISTIC_MODEL_PATH = "./model/logistic_regression_movement_exponential.joblib"
 PCA_PATH = "./model/pca_model.pkl"
 LSTM_MODEL_PATH = "./model/lstm_model.h5"
 STATIC_MODEL_PATH = "./model/static_model.h5"
@@ -46,7 +46,7 @@ latest_motion_label = "Unknown"
 lstm_model = None
 try:
     print(f"Loading LSTM model from: {LSTM_MODEL_PATH}")
-    actions_dynamic = np.array([folder for folder in os.listdir(DYNAMIC_MODEL_DATA) if os.path.isdir(os.path.join(DYNAMIC_MODEL_DATA, folder))])
+    actions_dynamic = ["your", "my", "what", "hello", "name"]
     print("Action dynamics list:", actions_dynamic)
     lstm_model = load_model(LSTM_MODEL_PATH)
 except Exception as e:
@@ -82,6 +82,10 @@ def pre_process_landmark(landmark_list):
 
     # Normalization
     max_value = max(list(map(abs, temp_landmark_list)))
+    if max_value == 0:
+        max_value = 1
+
+    # max_value = max(list(map(abs, temp_landmark_list)))
 
     def normalize_(n):
         return n / max_value
@@ -202,6 +206,7 @@ def classify_motion_from_sequence(sequence, threshold=0.15):
         return "Unknown"
 
     avg_movement = np.array([[np.mean(movement_magnitudes)]])
+    
     probabilities = movement_model.predict_proba(avg_movement)[0]
     prob_dynamic = probabilities[1]
 

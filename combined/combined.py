@@ -5,11 +5,19 @@ import joblib
 import os
 import copy
 import itertools
+import threading
+from queue import Queue
 from collections import deque
 import mediapipe as mp
 from tensorflow.keras.models import load_model
 from action_recognition import process_dynamic_sequence
 from utils import extract_keypoints_static, mediapipe_detection
+from llama3_translation import get_response
+
+sentence = []
+static_prediction_buffer = deque(maxlen=5)
+confirmed_static = None
+translation_output_queue = Queue()
 
 # Constants
 FRAME_WINDOW = 15
@@ -188,10 +196,9 @@ def classify_motion(results, threshold=0.2):
 
 
 def process_static_frame(frame, results):
-    global result
+    global result, static_prediction_buffer, confirmed_letter
     if static_model is None:
         return
-    print(results)
     hand_landmarks = extract_keypoints_static(results)
     if np.any(hand_landmarks):
         keypoints = calc_landmark_list(frame, hand_landmarks)
@@ -199,7 +206,19 @@ def process_static_frame(frame, results):
         pred_probs = static_model.predict(np.array([processed_keypoints]))[0]
         pred_idx = np.argmax(pred_probs)
         predicted_letter = actions[pred_idx]
-        result = predicted_letter
+
+        # Check if the prediction is stable
+        # confirm if the same prediction is made for 5 consecutive frames
+        static_prediction_buffer.append(predicted_letter)
+
+        # Check if all predictions in buffer are the same
+        if len(static_prediction_buffer) == static_prediction_buffer.maxlen:
+            if all(p == predicted_letter for p in static_prediction_buffer):
+                if confirmed_letter != predicted_letter:
+                    confirmed_letter = predicted_letter
+                    result = confirmed_letter
+                    # place in queue for translation
+                    translation_queue.put(confirmed_letter)
 
 
 def process_dynamic_frames(frame_sequence):
@@ -208,14 +227,14 @@ def process_dynamic_frames(frame_sequence):
         return
     action_result = process_dynamic_sequence(lstm_model, actions_dynamic, frame_sequence, pca)
     result = action_result
-    hold_timer = 5
+    translation_queue.put(action_result)
+    # hold_timer = 5
 
 
-import threading
 
 # Thread-safe queue for prediction jobs
-from queue import Queue
 prediction_queue = Queue()
+translation_queue = Queue()
 
 
 def static_worker():
@@ -238,6 +257,29 @@ def dynamic_worker():
         if isinstance(job, dict) and 'type' in job and job['type'] == 'dynamic':
             process_dynamic_frames(job['data'])
         prediction_queue.task_done()
+        
+        
+def translation_worker(queue, translation_output_queue):
+    sentence = []
+    last_updated = time.time()
+    timeout_duration = 3  # seconds of inactivity = sentence end
+
+    while True:
+        time.sleep(0.1)  # frequent check
+        if not queue.empty():
+            while not queue.empty():
+                new_word = queue.get()
+                sentence.append(new_word)
+                last_updated = time.time()
+
+        if sentence and (time.time() - last_updated > timeout_duration):
+            prompt = ' '.join(sentence)
+            response = get_response(prompt)
+            print("🧠 Prompt:", prompt)
+            print("🔠 Interpreted phrase:", response)
+            translation_output_queue.put(response)
+            sentence.clear()
+            
 
 
 def main():
@@ -258,6 +300,9 @@ def main():
     # Start background workers
     threading.Thread(target=static_worker, daemon=True).start()
     threading.Thread(target=dynamic_worker, daemon=True).start()
+    threading.Thread(target=translation_worker, args=(translation_queue, translation_output_queue), daemon=True).start()
+
+    interpreted_phrase = ""
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -278,9 +323,14 @@ def main():
         if hold_timer > 0:
             hold_timer -= 1
 
+        if not translation_output_queue.empty():
+            interpreted_phrase = translation_output_queue.get()
+
         cv2.putText(frame, f"Gesture: {result}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         cv2.putText(frame, f"Motion: {latest_motion_label}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+        cv2.putText(frame, f"Interpretation: {interpreted_phrase}", (10, 390), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
         cv2.imshow("Motion Detection", frame)
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 

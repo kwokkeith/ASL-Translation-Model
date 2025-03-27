@@ -1,0 +1,17 @@
+root                   ::= statement | question | greeting-question | greeting-statement 
+
+question               ::= interrogative-pronoun WS verb WS possessive-pronoun WS noun "?"
+greeting-question      ::= greeting WS question
+statement              ::= possessive-pronoun WS noun WS verb WS proper-noun (WS proper-noun)*
+greeting-statement     ::= greeting WS statement
+
+greeting               ::= "hello"
+interrogative-pronoun  ::= "what"
+possessive-pronoun     ::= "my" | "your"
+verb                   ::= "is"
+noun                   ::= "name"
+
+proper-noun            ::= lowercase-letter+
+lowercase-letter       ::= [a-z]
+number		       ::= [0-9]
+WS                     ::= " " | "\t" | "\n"

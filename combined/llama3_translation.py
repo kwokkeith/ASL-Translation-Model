@@ -32,7 +32,7 @@ prompt = "The below in enclosed single backtick is an output from a model intepr
 #             'WS ::= " " | "\t" | "\n"'
 
 def get_response(text):
-    result = subprocess.run(["/home/gl/Documents/CDS/llama.cpp-master/build/bin/llama-cli", 
+    result = subprocess.run(["./llama-cli/llama-cli", 
             "-m",
             "./model/ggml-model-Q4_K_M.gguf",
             "--jinja",

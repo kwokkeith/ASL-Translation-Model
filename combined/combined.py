@@ -16,7 +16,7 @@ from llama3_translation import get_response
 
 sentence = []
 static_prediction_buffer = deque(maxlen=5)
-confirmed_static = None
+confirmed_letter = None
 translation_output_queue = Queue()
 
 # Constants

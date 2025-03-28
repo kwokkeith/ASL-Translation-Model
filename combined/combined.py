@@ -275,8 +275,8 @@ def translation_worker(queue, translation_output_queue):
         if sentence and (time.time() - last_updated > timeout_duration):
             prompt = ' '.join(sentence)
             response = get_response(prompt)
-            print("🧠 Prompt:", prompt)
-            print("🔠 Interpreted phrase:", response)
+            print("Prompt:", prompt)
+            print("Interpreted phrase:", response)
             translation_output_queue.put(response)
             sentence.clear()
             

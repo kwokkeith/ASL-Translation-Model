@@ -1,5 +1,5 @@
 ## Obtain llama-cli
-Assuming you are in the `combined` folder
+Assuming you are in the `combined` working directory folder
 
 ### Clone the llama.cpp repository
 ```bash
@@ -20,3 +20,17 @@ Get the `llama3` model:
 wget -O model/ggml-model-Q4_K_M.gguf https://huggingface.co/nmerkle/Meta-Llama-3-8B-Instruct-ggml-model-Q4_K_M.gguf/resolve/main/ggml-model-Q4_K_M.gguf
 ```
 The above model ggml-model-Q4\_K\_M.gguf should be located inside combined/model
+
+## Launch the live prediction model
+Make sure to source the virtual environment first. It can be found in the base folder ../
+The requirements.txt can be used to create a virtual environment.
+
+```bash
+python -m venv ../venv
+source ../venv/bin/activate
+pip install -r ../requirements.txt
+```
+```bash
+python combined.py
+```
+

@@ -3,6 +3,7 @@ import subprocess
 import os
 
 cpu_count = os.cpu_count()
+print(cpu_count)
 
 def get_response(text):
     result = subprocess.run(["./llama-cli/llama-cli", 
@@ -16,7 +17,7 @@ def get_response(text):
             text,
             "--grammar-file",
             "./grammar/english.gbnf",
-            "-t", cpu_count],
+            "-t", str(cpu_count)],
             capture_output=True,
             text=True)
     s = result.stdout

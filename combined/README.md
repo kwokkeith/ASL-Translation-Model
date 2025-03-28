@@ -28,6 +28,9 @@ The requirements.txt can be used to create a virtual environment.
 ```bash
 python -m venv ../venv
 source ../venv/bin/activate
+# For Mac
+pip install -r ../requirements_mac.txt
+# For anything else
 pip install -r ../requirements.txt
 ```
 ```bash

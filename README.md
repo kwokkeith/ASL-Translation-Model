@@ -2,10 +2,10 @@
 This project aims to perform prediction of American Sign Language. It is capable of classifying gestures by first categorising it as either static or dynamic actions. It then passes the raw frames to either a static or dynamic model for prediction of the gesture. For tinkering, the model also passes these predictions into a small Large-Language Model to perform english sentence formations.
 
 ### Model Structure Summary:
-Classification Model: Logistic Regression on Weighted Average Movement
-Action Recognition (Dynamic) Model: Long-short Term Memory Neural Network
-Alphabet Recognition (Static) Model: Feed Forward Neural Network
-English Structure (LLM) Model: Llama Large Language Model
+1. Classification Model: Logistic Regression on Weighted Average Movement
+2. Action Recognition (Dynamic) Model: Long-short Term Memory Neural Network
+3. Alphabet Recognition (Static) Model: Feed Forward Neural Network
+4. English Structure (LLM) Model: Llama Large Language Model
 
 Predictions:
 Static Gestures: [A-Z,0-9]

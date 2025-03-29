@@ -6,6 +6,25 @@ Static Gestures: [A-Z,0-9]
 Dynamic Gestures: ["Hello", "My", "Name", "Your", "What"]
 
 A Grammar in Backus–Naur form was curated to guide the small Large-Language Model in structuring the English sentences.
+```gbnf
+root                   ::= statement | question | greeting-question | greeting-statement 
+
+question               ::= interrogative-pronoun WS verb WS possessive-pronoun WS noun "?"
+greeting-question      ::= greeting WS question
+statement              ::= possessive-pronoun WS noun WS verb WS proper-noun (WS proper-noun)*
+greeting-statement     ::= greeting WS statement
+
+greeting               ::= "hello"
+interrogative-pronoun  ::= "what"
+possessive-pronoun     ::= "my" | "your"
+verb                   ::= "is"
+noun                   ::= "name"
+
+proper-noun            ::= lowercase-letter+
+lowercase-letter       ::= [a-z]
+number	      	       ::= [0-9]
+WS                     ::= " " | "\t" | "\n"
+```
 
 Project Folder Structures:
 1. action\_detection: Dynamic Gesture Model codebase

@@ -155,7 +155,7 @@ This repository contains Python scripts for training, evaluating, and running an
 ## 📦 **Installation & Setup**
 
 1️⃣ Install dependencies:
-
+This should have been performed in the project's base folder (Previous directory)
 ```sh
 pip install -r requirements.txt
 ```

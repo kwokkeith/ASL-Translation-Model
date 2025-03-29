@@ -32,7 +32,7 @@ number	      	       ::= [0-9]
 WS                     ::= " " | "\t" | "\n"
 ```
 
-Project Folder Structures:
+### Project Folder Structures:
 1. action\_detection: Dynamic Gesture Model codebase
 2. alphabet\_detection\_model: Static Gesture Model codebase
 3. classification\_model: Static/Dynamic Classification Model codebase

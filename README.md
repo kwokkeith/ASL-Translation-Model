@@ -18,7 +18,7 @@ A requirements.txt is provided for both mac and linux version. It is unclear if 
 
 These requirements are required to run this project in the appropriate environment
 
-``bash
+```bash
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt # For Linux

@@ -5,10 +5,9 @@ import argparse
 import mediapipe as mp
 import tensorflow as tf
 from utils import find_first_available_camera, mediapipe_detection, draw_styled_landmarks, extract_optimizer_from_path, extract_keypoints
-from utils1.cvfpscalc import CvFpsCalc
+from cvfpscalc import CvFpsCalc
 import copy
 import itertools
-from model.keypoint_classifier.keypoint_classifier import KeyPointClassifier
 from tensorflow.keras.models import load_model
 
 
@@ -30,7 +29,7 @@ def get_args():
                         help="Minimum tracking confidence for Mediapipe")
     parser.add_argument("--threshold", type=float, default=0.5,
                         help="Prediction confidence threshold")
-    parser.add_argument("--rate", type=float, default=0.001,
+    parser.add_argument("--rate", type=float, default=0.00005,
                         help="Learning rate of the model loaded")
     return parser.parse_args()
 

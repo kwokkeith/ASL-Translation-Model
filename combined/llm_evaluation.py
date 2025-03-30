@@ -3,6 +3,8 @@ import pandas as pd
 import subprocess
 import os
 from bert_score import score
+import re
+import time
 
 cpu_count = os.cpu_count()
 
@@ -18,6 +20,10 @@ MODEL_CONFIGS = {
 
 # Load CSV
 df = pd.read_csv("llm_data.csv")
+
+# Function to normalize text
+def normalize(text):
+    return re.sub(r'[^a-z0-9 ]', '', text.lower().strip())
 
 # Function to run llama-cli
 def run_llm(prompt, model_path):
@@ -55,6 +61,9 @@ def run_llm(prompt, model_path):
     else:
         print("[end of text] not found.")
         return ""
+    
+normalised_accuracies = {}
+avg_runtimes = {}
 
 # 3 runs per gesture per model
 for model_name, config in MODEL_CONFIGS.items():
@@ -62,11 +71,19 @@ for model_name, config in MODEL_CONFIGS.items():
     precision_scores = []
     recall_scores = []
     f1_scores = []
+    runtimes = []
+    correct = 0
+    total = len(df)
 
     for prompt, ref in zip(df['gesture_sequence'], df['ground_truth']):
         model_outputs = []
         for i in range(3):
+            start = time.time()
             out = run_llm(prompt, config["model_path"])
+            end = time.time()
+            runtime = end - start
+            runtimes.append(runtime)
+
             outputs[f"{model_name}_output_{i+1}"].append(out)
             model_outputs.append(out)
 
@@ -76,6 +93,10 @@ for model_name, config in MODEL_CONFIGS.items():
         recall_scores.append(float(sum(R).item()) / 3)
         f1_scores.append(float(sum(F1).item()) / 3)
 
+        norm_gt = normalize(ref)
+        if norm_gt in [normalize(o) for o in model_outputs]:
+            correct += 1
+
     # Add outputs and scores to dataframe
     for key in outputs:
         df[key] = outputs[key]
@@ -83,9 +104,12 @@ for model_name, config in MODEL_CONFIGS.items():
     df[f"{model_name}_bertscore_recall"] = recall_scores
     df[f"{model_name}_bertscore_f1"] = f1_scores
 
+    normalised_accuracies[model_name] = round((correct / total)*100, 2)
+    avg_runtimes[model_name] = round(sum(runtimes) / len(runtimes), 2)
+
 # Save full output
 print("Saving output...")
-df.to_csv("asl_llm_model_comparison_3runs.csv", index=False)
+df.to_csv("asl_llm_model_comparison_3runs_new.csv", index=False)
 
 # Print summary
 for model in MODEL_CONFIGS:
@@ -95,3 +119,5 @@ for model in MODEL_CONFIGS:
     print(f"{model} - Avg BERTScore Precision: {avg_precision:.4f}")
     print(f"{model} - Avg BERTScore Recall: {avg_recall:.4f}")
     print(f"{model} - Avg BERTScore F1: {avg_f1:.4f}")
+    print(f"{model} - Normalised Accuracy: {normalised_accuracies[model]}%")
+    print(f"{model} - Avg Runtime: {avg_runtimes[model]}s")

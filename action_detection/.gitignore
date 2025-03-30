@@ -7,7 +7,6 @@
 /Logs/
 /Saved_Models/
 /Saved_Models_LSTM/
-/mp_data*
 /output*
 training_pipeline[0-9]*.py
 /statistic_output
